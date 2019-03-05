@@ -99,9 +99,13 @@ public class robotBase {
         RRD.setPower(0);
     }
 
+
+
+    /*Wheels must be instaled in X pattern (based on rollers) */
     /*Control the mecanum drive base with a controller's x input (double strafe)
     and a controller's y input (double forward) to translate,
     and a second x input (double turn) to rotate*/
+    /*Positive inputs represent a right translation, forward movement, and clockwise turn */
     public void mecanumController(double Strafe, double Forward, double Turn){
         //Find the magnitude of the controller's input
         double r = Math.hypot(Strafe, Forward);
@@ -126,7 +130,7 @@ public class robotBase {
     }
 
     //Scale input to a modified sigmoid curve
-    public double powerScale(double power){
+    public static double powerScale(double power){
         //If power is negative, log this and save for later
         //If positive, keep neg to 1, so that num is always positive
         //If negative, change to -1, so that ending number is negative
@@ -138,8 +142,8 @@ public class robotBase {
         power = Math.abs(power);
 
         //modify to sigmoid
-        power = 1/(1 + Math.pow(Math.E, -10*(power-.5)));
-        //graph here -> https://www.desmos.com/calculator/8runiwvydo
+        power = 1.05/(1 + Math.pow(Math.E, -10*(power-.5)));
+        //graph here -> https://www.desmos.com/calculator/c6uav7pudi
 
         //Make sure value falls between -1 and 1
         return Range.clip(power * neg, -1, 1);
