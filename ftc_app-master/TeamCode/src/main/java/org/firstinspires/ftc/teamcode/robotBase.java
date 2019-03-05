@@ -74,5 +74,6 @@ public class robotBase {
         RRD.setPower(v4);
     }
 
+    //A method to drive to a specific position via a desired (X,Y) pair given in inches. 
     //https://github.com/trc492/FtcSamples/blob/master/Ftc3543Lib/src/main/java/trclib/TrcPidDrive.java
 }
