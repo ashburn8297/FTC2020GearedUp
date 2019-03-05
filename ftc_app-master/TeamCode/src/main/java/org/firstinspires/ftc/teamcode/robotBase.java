@@ -1,9 +1,20 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
+
+import static java.lang.Thread.sleep;
 
 public class robotBase {
 
@@ -12,6 +23,8 @@ public class robotBase {
     public DcMotor FRD                  = null; //Front Right Drive Motor, "FRD"
     public DcMotor RLD                  = null; //Rear Left Drive Motor, "RLD"
     public DcMotor RRD                  = null; //Rear Right Drive Motor, "RRD"
+
+    BNO055IMU imu;                              //REV Expansion Hub's internal IMU
 
     public int REVPlanetaryTicksPerRev  = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
 
@@ -49,6 +62,18 @@ public class robotBase {
 
         //Set all motors so when zero power is issues, motors to not actively resist (brake)
         baseFloat();
+
+        //Configure the Bosch IMU for use
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+
+        parameters.mode                = BNO055IMU.SensorMode.IMU;
+        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
+        parameters.loggingEnabled      = false;
+
+        imu = hwMap.get(BNO055IMU.class, "imu");
+        imu.initialize(parameters);
     }
 
     //Run the robot, ignoring encoder values
@@ -98,8 +123,6 @@ public class robotBase {
         RLD.setPower(0);
         RRD.setPower(0);
     }
-
-
 
     /*Wheels must be instaled in X pattern (based on rollers) */
     /*Control the mecanum drive base with a controller's x input (double strafe)
@@ -151,4 +174,18 @@ public class robotBase {
 
     //A method to drive to a specific position via a desired (X,Y) pair given in inches.
     //https://github.com/trc492/FtcSamples/blob/master/Ftc3543Lib/src/main/java/trclib/TrcPidDrive.java
+
+    //Get the IMU's current x value
+    public double getIMUPositionX(){
+        return imu.getPosition().unit.toInches(imu.getPosition().x);
+    }
+
+    //Get the IMU's current z value
+    public double getIMUPositionZ(){
+        return imu.getPosition().unit.toInches(imu.getPosition().z);
+    }
+
+    public Orientation getIMUAngles(){
+        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+    }
 }
