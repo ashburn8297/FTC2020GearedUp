@@ -35,8 +35,7 @@ public class teleOp extends OpMode {
 
     @Override
     public void loop(){
-
-        robot.mecanumController(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad2.right_stick_x);
+        robot.mecanum(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad2.right_stick_x);
 
         telemetry.addData("Time", runtime.seconds());
         telemetry.addData("Controller X", gamepad1.left_stick_x);

@@ -1,8 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.graphics.LinearGradient;
+
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IntegratingGyroscope;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -25,8 +30,11 @@ public class robotBase {
     public DcMotor RRD                  = null; //Rear Right Drive Motor, "RRD"
 
     BNO055IMU imu;                              //REV Expansion Hub's internal IMU
+    IntegratingGyroscope gyro;                  //For polymorphism
+    NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope
 
-    public int REVPlanetaryTicksPerRev  = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
+    public static final int REVPlanetaryTicksPerRev    = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
+    public static final double HEADING_THRESHOLD       = .75 ;
 
     /*Local opMode members*/
     HardwareMap hwMap           =  null;
@@ -69,11 +77,14 @@ public class robotBase {
         parameters.mode                = BNO055IMU.SensorMode.IMU;
         parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
         parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
         parameters.loggingEnabled      = false;
 
         imu = hwMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
+
+        //Configure the NavXMicro for use
+        navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx");
+        gyro = navxMicro;
     }
 
     //Run the robot, ignoring encoder values
@@ -98,6 +109,13 @@ public class robotBase {
         FRD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         RLD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         RRD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    }
+
+    public void resetEncoders(){
+        FLD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FRD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        RLD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        RRD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
 
     //Set all motors to float when zero power command is issued
@@ -129,7 +147,7 @@ public class robotBase {
     and a controller's y input (double forward) to translate,
     and a second x input (double turn) to rotate*/
     /*Positive inputs represent a right translation, forward movement, and clockwise turn */
-    public void mecanumController(double Strafe, double Forward, double Turn){
+    public void mecanum(double Strafe, double Forward, double Turn){
         //Find the magnitude of the controller's input
         double r = Math.hypot(Strafe, Forward);
 
@@ -173,7 +191,74 @@ public class robotBase {
     }
 
     //A method to drive to a specific position via a desired (X,Y) pair given in inches.
-    //https://github.com/trc492/FtcSamples/blob/master/Ftc3543Lib/src/main/java/trclib/TrcPidDrive.java
+    public void translate(double xInches, double zInches, double timeout, double speedX, double speedZ, LinearOpMode opMode){
+        //Create a local timer
+        ElapsedTime period  = new ElapsedTime();
+
+        //Figure out the desired target in inches
+        double xTarget = xInches + getIMUPositionX();
+        double zTarget = zInches + getIMUPositionZ();
+
+        //Be sure encoders are being used
+        runUsingEncoders();
+
+        //Negate speeds if the distance to go is negative
+        if(xInches < 0){
+            speedX *= -1;
+        }
+        if(zInches < 0){
+            speedZ *= -1;
+        }
+
+        //reset timer before movements
+        period.reset();
+
+        //While timeout is in range, both X and Z are off target, and the opModeIsActive, move towards the position
+        while((period.seconds() < timeout) && ((getIMUPositionX() != xTarget) && (getIMUPositionZ() != zTarget)) && opMode.opModeIsActive()){
+            mecanum(speedX, speedZ, 0.0);
+            opMode.idle();
+        }
+
+        //Stop when done
+        brake();
+    }
+
+    //Turn towards a given heading
+    public void turn(double targetAngle, double speed, double timeout, LinearOpMode opMode) {
+        //Create a local timer
+        ElapsedTime period = new ElapsedTime();
+        double  error;
+        double  steer;
+
+        //Coefficient of turn
+        double  PCoeff = .015;
+
+        //While active and within timeout
+        while(opMode.opModeIsActive() && (period.seconds() < timeout)){
+            //Pull the robot's current heading
+            double CurAngle = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+
+            //Find the error
+            error = targetAngle - CurAngle;
+
+            //If within threshold, stop.
+            if (Math.abs(error) <= HEADING_THRESHOLD) {
+                brake();
+            }
+
+            //Else use coeff to steer and set power.
+            else {
+                steer = Range.clip(error * PCoeff, -1, 1);
+                speed  = speed * steer;
+                mecanum(0.0, 0.0, speed);
+            }
+            opMode.idle();
+        }
+        //Stop when done.
+        brake();
+    }
+
+    //Possibly add some encoder method for driving straight.
 
     //Get the IMU's current x value
     public double getIMUPositionX(){
@@ -185,6 +270,7 @@ public class robotBase {
         return imu.getPosition().unit.toInches(imu.getPosition().z);
     }
 
+    //Get the IMU's current Angular Orientation
     public Orientation getIMUAngles(){
         return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
     }
