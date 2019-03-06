@@ -29,7 +29,6 @@ public class robotBase {
     public DcMotor RLD                  = null; //Rear Left Drive Motor, "RLD"
     public DcMotor RRD                  = null; //Rear Right Drive Motor, "RRD"
 
-    BNO055IMU imu;                              //REV Expansion Hub's internal IMU
     IntegratingGyroscope gyro;                  //For polymorphism
     NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope
 
@@ -78,7 +77,10 @@ public class robotBase {
 
         //Configure the NavXMicro for use
         navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx");
+
+        //https://pdocs.kauailabs.com/navx-micro/guidance/gyroaccelerometer-calibration/
         gyro = navxMicro;
+
     }
 
     //Run the robot, ignoring encoder values
@@ -136,7 +138,7 @@ public class robotBase {
         RRD.setPower(0);
     }
 
-    /**Control a mecanum drive base with three double inputs
+     /**Control a mecanum drive base with three double inputs
      *
      * @param Strafe is the first double X value which represents how the base should strafe
      * @param Forward is the only double Y value which represents how the base should drive forward
@@ -157,6 +159,40 @@ public class robotBase {
         final double v2 = r * Math.sin(robotAngle) - rightX;
         final double v3 = r * Math.sin(robotAngle) + rightX;
         final double v4 = r * Math.cos(robotAngle) - rightX;
+
+        //Ramp these values with powerScale's values.
+        FLD.setPower(powerScale(v1));
+        FRD.setPower(powerScale(v2));
+        RLD.setPower(powerScale(v3));
+        RRD.setPower(powerScale(v4));
+    }
+
+    /**Control a mecanum drive base with three double inputs
+     *
+     * @param Strafe is the first double X value which represents how the base should strafe
+     * @param Forward is the only double Y value which represents how the base should drive forward
+     * @param Heading is the heading the robot should maintain
+     * */
+    public void mecanumGyroLock(double Strafe, double Forward, double Heading) {
+        //Find the magnitude of the controller's input
+        double r = Math.hypot(Strafe, Forward);
+
+        //returns point from +X axis to point (forward, strafe)
+        double robotAngle = Math.atan2(Forward, Strafe) - Math.PI / 4;
+
+        //Quantity to turn by (turn)
+        double rightX = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+
+        double error = (Heading - rightX)/180;
+
+        //if error is positive, spin negative
+        //if error is negative, spin positive
+
+        //double vX represents the velocities sent to each motor
+        final double v1 = r * Math.cos(robotAngle) + error;
+        final double v2 = r * Math.sin(robotAngle) - error;
+        final double v3 = r * Math.sin(robotAngle) + error;
+        final double v4 = r * Math.cos(robotAngle) - error;
 
         //Ramp these values with powerScale's values.
         FLD.setPower(powerScale(v1));
@@ -191,7 +227,7 @@ public class robotBase {
         return Range.clip(power * neg, -1, 1);
     }
 
-    /**A method to drive to a specific position via a desired (X,Y) pair given in inches.
+    /**A method to drive to a specific position via a desired (X,Z) pair given in inches.
      *
      * @param xInches desired X axis translation (left right)
      * @param zInches desired Z axis translation (front back)
@@ -219,10 +255,16 @@ public class robotBase {
         period.reset();
         while((period.seconds() < timeout) && (FLD.isBusy() || FRD.isBusy() || RLD.isBusy() || RRD.isBusy()) && opMode.opModeIsActive()){
 
-            double curPos = Math.abs(FLD.getCurrentPosition());
-            double endPos = Math.abs(FLTarget);
+            double curPos = (Math.abs(FLD.getCurrentPosition())+Math.abs(FRD.getCurrentPosition())+Math.abs(RLD.getCurrentPosition())+Math.abs(RRD.getCurrentPosition()))/4; //The average robot's current position
+            double endPos = (Math.abs(FLTarget)+Math.abs(FRTarget)+Math.abs(RLTarget)+Math.abs(RRTarget))/4;//The average robot's ending position
 
-            double vel = powerRamp(speed, curPos, endPos);
+            /*
+             * This method of position tracking works because encoders are reset.
+             * Mecanum slippage may undershoot these distances, check vectoring.
+             */
+
+            //Using average positions, compute system's velocity
+            double vel = powerRamp(Math.abs(speed), curPos, endPos);
             FLD.setPower(vel);
             FRD.setPower(vel);
             RLD.setPower(vel);
@@ -232,9 +274,19 @@ public class robotBase {
         //Stop when done
         brake();
 
+        //Revert to previous running state
         runUsingEncoders();
     }
 
+    /**
+     *
+     * @param speed maximum desired speed (between 0 & 1)
+     * @param curPos the encoder's current value
+     * @param endPos the encoder's desired ending value
+     * @return modified value for encoder ramp
+     *
+     * graph here -> https://www.desmos.com/calculator/bprnntmxxz
+     */
     public static double powerRamp(double speed, double curPos, double endPos){
         double pos = curPos/endPos; //provides double of percentage to end
         if(pos < .5){
@@ -243,7 +295,6 @@ public class robotBase {
         else{
             return speed * ((-1.5 * pos) + 1.75);
         }
-        //graph https://www.desmos.com/calculator/bprnntmxxz
     }
 
     /**Turn towards a given heading

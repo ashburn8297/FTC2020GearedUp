@@ -31,11 +31,12 @@ public class auto extends LinearOpMode {
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Ready");
+        telemetry.update();
 
         waitForStart();
         runtime.reset();
 
-        robot.translate(10, 10, 3.0, .4, auto.this);
+        robot.translate(10, 0, 3.0, .4, auto.this);
         sleep(500);
 
         robot.turn(45, .25, 2.0, auto.this);

@@ -4,10 +4,17 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+
 @TeleOp(name="Mecanum Test")
 public class teleOp extends OpMode {
     robotBase robot       = new robotBase();
     ElapsedTime runtime   = new ElapsedTime();
+
+    boolean gyroLock = false;
+    double lockHead = 0.0;
 
     public void init() {
         /* Initialize the hardware variables.
@@ -35,7 +42,19 @@ public class teleOp extends OpMode {
 
     @Override
     public void loop(){
-        robot.mecanum(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad2.right_stick_x);
+
+        //Add gyro lock if not turning.
+        if(Math.abs(gamepad2.right_stick_x)<.05){ //If turning is not happening
+            if(gyroLock == false) { //See if new heading has been set
+                lockHead = robot.gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+                gyroLock = true;
+            }
+            robot.mecanumGyroLock(gamepad1.left_stick_x, -gamepad1.left_stick_y, lockHead);
+        }
+        else {
+            robot.mecanum(gamepad1.left_stick_x, -gamepad1.left_stick_y, gamepad2.right_stick_x);
+            gyroLock = false;
+        }
 
         telemetry.addData("Time", runtime.seconds());
         telemetry.addData("Controller X", gamepad1.left_stick_x);
