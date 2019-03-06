@@ -238,11 +238,12 @@ public class robotBase {
     public static double powerRamp(double speed, double curPos, double endPos){
         double pos = curPos/endPos; //provides double of percentage to end
         if(pos < .5){
-            return speed * (2 * pos);
+            return speed * ((1.5 * pos) + .25);
         }
         else{
             return speed * ((-1.5 * pos) + 1.75);
         }
+        //graph https://www.desmos.com/calculator/bprnntmxxz
     }
 
     /**Turn towards a given heading
