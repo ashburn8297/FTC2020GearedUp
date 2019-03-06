@@ -21,18 +21,7 @@ public class auto extends LinearOpMode {
         robot.runUsingEncoders();
         robot.baseFloat();
 
-
-        // make sure the imu gyro is calibrated before continuing.
-        runtime.reset();
-        while (!isStopRequested() && !robot.imu.isGyroCalibrated())
-        {
-            telemetry.addData("Calibrating", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
-            telemetry.update();
-            sleep(50);
-            idle();
-        }
-
-        //Then, calibrate gyro
+        //calibrate gyro
         runtime.reset();
         while (!isStopRequested() && robot.navxMicro.isCalibrating())  {
             telemetry.addData("Calibrating", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
@@ -46,7 +35,7 @@ public class auto extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        robot.translate(10, 10, 3.0, .4, .4, auto.this);
+        robot.translate(10, 10, 3.0, .4, auto.this);
         sleep(500);
 
         robot.turn(45, .25, 2.0, auto.this);

@@ -33,8 +33,13 @@ public class robotBase {
     IntegratingGyroscope gyro;                  //For polymorphism
     NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope
 
-    public static final int REVPlanetaryTicksPerRev    = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
-    public static final double HEADING_THRESHOLD       = .75 ;
+    public static final int REV_Planetary_Ticks_Per_Rev = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
+    public static final double wheel_diameter           = 4.0; //Diameter of wheel
+    public static final double drive_reduction          = 1.0; //This is < 1.0 if Geared UP
+
+    public static final double ticks_per_inch           = (REV_Planetary_Ticks_Per_Rev * drive_reduction)/(wheel_diameter * Math.PI);
+
+    public static final double HEADING_THRESHOLD        = .75 ;
 
     /*Local opMode members*/
     HardwareMap hwMap           =  null;
@@ -70,17 +75,6 @@ public class robotBase {
 
         //Set all motors so when zero power is issues, motors to not actively resist (brake)
         baseFloat();
-
-        //Configure the Bosch IMU for use
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-
-        parameters.mode                = BNO055IMU.SensorMode.IMU;
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.loggingEnabled      = false;
-
-        imu = hwMap.get(BNO055IMU.class, "imu");
-        imu.initialize(parameters);
 
         //Configure the NavXMicro for use
         navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx");
@@ -142,11 +136,12 @@ public class robotBase {
         RRD.setPower(0);
     }
 
-    /*Wheels must be instaled in X pattern (based on rollers) */
-    /*Control the mecanum drive base with a controller's x input (double strafe)
-    and a controller's y input (double forward) to translate,
-    and a second x input (double turn) to rotate*/
-    /*Positive inputs represent a right translation, forward movement, and clockwise turn */
+    /**Control a mecanum drive base with three double inputs
+     *
+     * @param Strafe is the first double X value which represents how the base should strafe
+     * @param Forward is the only double Y value which represents how the base should drive forward
+     * @param Turn is the second double X value which represents how the base should turn
+     * */
     public void mecanum(double Strafe, double Forward, double Turn){
         //Find the magnitude of the controller's input
         double r = Math.hypot(Strafe, Forward);
@@ -170,7 +165,13 @@ public class robotBase {
         RRD.setPower(powerScale(v4));
     }
 
-    //Scale input to a modified sigmoid curve
+    /**Scale input to a modified sigmoid curve
+     *
+     * @param power is a double input from the mecanum method
+     *
+     * @return modified power value per the sigmoid curve
+     * graph here -> https://www.desmos.com/calculator/c6uav7pudi
+     */
     public static double powerScale(double power){
         //If power is negative, log this and save for later
         //If positive, keep neg to 1, so that num is always positive
@@ -190,40 +191,67 @@ public class robotBase {
         return Range.clip(power * neg, -1, 1);
     }
 
-    //A method to drive to a specific position via a desired (X,Y) pair given in inches.
-    public void translate(double xInches, double zInches, double timeout, double speedX, double speedZ, LinearOpMode opMode){
+    /**A method to drive to a specific position via a desired (X,Y) pair given in inches.
+     *
+     * @param xInches desired X axis translation (left right)
+     * @param zInches desired Z axis translation (front back)
+     * @param timeout maximum amount of time for the action to occur
+     * @param speed how quickly to translate
+     * @param opMode the current state of the opMode
+     */
+    public void translate(double xInches, double zInches, double timeout, double speed, LinearOpMode opMode){
         //Create a local timer
         ElapsedTime period  = new ElapsedTime();
 
-        //Figure out the desired target in inches
-        double xTarget = xInches + getIMUPositionX();
-        double zTarget = zInches + getIMUPositionZ();
+        runToPosition();
+        resetEncoders();
 
-        //Be sure encoders are being used
-        runUsingEncoders();
+        int FLTarget = (int) ((zInches * ticks_per_inch) - (xInches * ticks_per_inch));
+        int FRTarget = (int) ((zInches * ticks_per_inch) + (xInches * ticks_per_inch));
+        int RLTarget = (int) ((zInches * ticks_per_inch) + (xInches * ticks_per_inch));
+        int RRTarget = (int) ((zInches * ticks_per_inch) - (xInches * ticks_per_inch));
 
-        //Negate speeds if the distance to go is negative
-        if(xInches < 0){
-            speedX *= -1;
-        }
-        if(zInches < 0){
-            speedZ *= -1;
-        }
+        FLD.setTargetPosition(FLTarget);
+        FRD.setTargetPosition(FRTarget);
+        RLD.setTargetPosition(RLTarget);
+        RRD.setTargetPosition(RRTarget);
 
-        //reset timer before movements
         period.reset();
+        while((period.seconds() < timeout) && (FLD.isBusy() || FRD.isBusy() || RLD.isBusy() || RRD.isBusy()) && opMode.opModeIsActive()){
 
-        //While timeout is in range, both X and Z are off target, and the opModeIsActive, move towards the position
-        while((period.seconds() < timeout) && ((getIMUPositionX() != xTarget) && (getIMUPositionZ() != zTarget)) && opMode.opModeIsActive()){
-            mecanum(speedX, speedZ, 0.0);
-            opMode.idle();
+            double curPos = Math.abs(FLD.getCurrentPosition());
+            double endPos = Math.abs(FLTarget);
+
+            double vel = powerRamp(speed, curPos, endPos);
+            FLD.setPower(vel);
+            FRD.setPower(vel);
+            RLD.setPower(vel);
+            RRD.setPower(vel);
         }
 
         //Stop when done
         brake();
+
+        runUsingEncoders();
     }
 
-    //Turn towards a given heading
+    public static double powerRamp(double speed, double curPos, double endPos){
+        double pos = curPos/endPos; //provides double of percentage to end
+        if(pos < .5){
+            return speed * (2 * pos);
+        }
+        else{
+            return speed * ((-1.5 * pos) + 1.75);
+        }
+    }
+
+    /**Turn towards a given heading
+     *
+     * @param targetAngle desire heading post-turn
+     * @param speed how quickly to turn about the point
+     * @param timeout maximum amount of time for the action to occur
+     * @param opMode the current state of the opMode
+     */
     public void turn(double targetAngle, double speed, double timeout, LinearOpMode opMode) {
         //Create a local timer
         ElapsedTime period = new ElapsedTime();
@@ -258,20 +286,11 @@ public class robotBase {
         brake();
     }
 
-    //Possibly add some encoder method for driving straight.
-
-    //Get the IMU's current x value
-    public double getIMUPositionX(){
-        return imu.getPosition().unit.toInches(imu.getPosition().x);
-    }
-
-    //Get the IMU's current z value
-    public double getIMUPositionZ(){
-        return imu.getPosition().unit.toInches(imu.getPosition().z);
-    }
-
-    //Get the IMU's current Angular Orientation
-    public Orientation getIMUAngles(){
-        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+    /**Get gyro's current Angular Orientation
+     *
+     * @return Orientation object with three angles inside
+     */
+    public Orientation getGyroAngles(){
+        return gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
     }
 }
