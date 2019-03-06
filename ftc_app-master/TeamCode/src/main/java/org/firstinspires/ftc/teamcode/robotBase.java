@@ -83,6 +83,8 @@ public class robotBase {
 
     }
 
+
+
     //Run the robot, ignoring encoder values
     public void runWithoutEncoders(){
         FLD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -90,6 +92,8 @@ public class robotBase {
         RLD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RRD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
+
+
 
     //Run the robot using encoder values as velocity check
     public void runUsingEncoders(){
@@ -99,6 +103,8 @@ public class robotBase {
         RRD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+
+
     //Run the robot using ecoders to run to a specified position (encoder ticks);
     public void runToPosition(){
         FLD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -107,12 +113,16 @@ public class robotBase {
         RRD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 
+
+
     public void resetEncoders(){
         FLD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         FRD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RLD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RRD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
+
+
 
     //Set all motors to float when zero power command is issued
     public void baseFloat(){
@@ -122,6 +132,8 @@ public class robotBase {
         RRD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
 
+
+
     //Set all motors to actively resist when zero power command is issued
     public void baseBrake(){
         FLD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -130,6 +142,8 @@ public class robotBase {
         RRD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
+
+
     //Set all motors to zero power
     public void brake(){
         FLD.setPower(0);
@@ -137,6 +151,8 @@ public class robotBase {
         RLD.setPower(0);
         RRD.setPower(0);
     }
+
+
 
      /**Control a mecanum drive base with three double inputs
      *
@@ -167,6 +183,8 @@ public class robotBase {
         RRD.setPower(powerScale(v4));
     }
 
+
+
     /**Control a mecanum drive base with three double inputs
      *
      * @param Strafe is the first double X value which represents how the base should strafe
@@ -181,9 +199,9 @@ public class robotBase {
         double robotAngle = Math.atan2(Forward, Strafe) - Math.PI / 4;
 
         //Quantity to turn by (turn)
-        double rightX = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+        double current = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
-        double error = (Heading - rightX)/180;
+        double error = (2*(Heading - current))/180;
 
         //if error is positive, spin negative
         //if error is negative, spin positive
@@ -200,6 +218,8 @@ public class robotBase {
         RLD.setPower(powerScale(v3));
         RRD.setPower(powerScale(v4));
     }
+
+
 
     /**Scale input to a modified sigmoid curve
      *
@@ -226,6 +246,8 @@ public class robotBase {
         //Make sure value falls between -1 and 1
         return Range.clip(power * neg, -1, 1);
     }
+
+
 
     /**A method to drive to a specific position via a desired (X,Z) pair given in inches.
      *
@@ -278,6 +300,8 @@ public class robotBase {
         runUsingEncoders();
     }
 
+
+
     /**
      *
      * @param speed maximum desired speed (between 0 & 1)
@@ -296,6 +320,8 @@ public class robotBase {
             return speed * ((-1.5 * pos) + 1.75);
         }
     }
+
+
 
     /**Turn towards a given heading
      *
@@ -336,13 +362,5 @@ public class robotBase {
         }
         //Stop when done.
         brake();
-    }
-
-    /**Get gyro's current Angular Orientation
-     *
-     * @return Orientation object with three angles inside
-     */
-    public Orientation getGyroAngles(){
-        return gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
     }
 }
