@@ -43,6 +43,15 @@ public class teleOp extends OpMode {
     @Override
     public void loop(){
 
+
+        /* This test TeleOp aims to accomplish the following:
+         * - Allow both normal operation and gyro-locked heading control
+         *
+         * It does this by:
+         * Monitoring the turn axis, and if the input is less than .05 (deadzone), the robot should lock heading and maintain it
+         * But, if the turn axis is greater than .05, the robot reverts to normal operation and accepts all three inputs without a gyro lock.
+         */
+
         //Add gyro lock if not turning.
         if(Math.abs(gamepad2.right_stick_x)<.05){ //If turning is not happening
             if(gyroLock == false) { //See if new heading has been set

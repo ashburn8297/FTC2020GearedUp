@@ -35,7 +35,6 @@ public class robotBase {
     public static final int REV_Planetary_Ticks_Per_Rev = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
     public static final double wheel_diameter           = 4.0; //Diameter of wheel
     public static final double drive_reduction          = 1.0; //This is < 1.0 if Geared UP
-
     public static final double ticks_per_inch           = (REV_Planetary_Ticks_Per_Rev * drive_reduction)/(wheel_diameter * Math.PI);
 
     public static final double HEADING_THRESHOLD        = .75 ;
@@ -185,7 +184,7 @@ public class robotBase {
 
 
 
-    /**Control a mecanum drive base with three double inputs
+    /**Strafe a mecanum drive where no turn is sent, robot attempts to maintain heading
      *
      * @param Strafe is the first double X value which represents how the base should strafe
      * @param Forward is the only double Y value which represents how the base should drive forward
@@ -201,7 +200,8 @@ public class robotBase {
         //Quantity to turn by (turn)
         double current = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
-        double error = (2*(Heading - current))/180;
+        //This may need to be reversed
+        double error = (Heading-current)/180;
 
         //if error is positive, spin negative
         //if error is negative, spin positive
