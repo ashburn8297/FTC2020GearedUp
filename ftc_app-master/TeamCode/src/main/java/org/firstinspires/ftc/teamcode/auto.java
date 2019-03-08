@@ -43,5 +43,6 @@ public class auto extends LinearOpMode {
         sleep(500);
 
         stop();
+
     }
 }
