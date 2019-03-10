@@ -1,14 +1,19 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorControllerEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IntegratingGyroscope;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.android.AndroidTextToSpeech;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
@@ -27,8 +32,12 @@ public class robotBase {
     public DcMotor RLD                  = null; //Rear Left Drive Motor, "RLD"
     public DcMotor RRD                  = null; //Rear Right Drive Motor, "RRD"
 
-    IntegratingGyroscope gyro;                  //For polymorphism
-    NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope
+    //IntegratingGyroscope gyroNV;                  //For polymorphism
+
+    //NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope
+
+    IntegratingGyroscope gyroMR;
+    ModernRoboticsI2cGyro modernRoboticsI2cGyro;
 
     public static final int REV_Planetary_Ticks_Per_Rev = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
     public static final double wheel_diameter           = 4.0; //Diameter of wheel
@@ -62,10 +71,10 @@ public class robotBase {
 
         //Set the drive base motors so that +1 drives forward
         /*It's possible these values are reversed*/
-        FLD.setDirection(DcMotor.Direction.FORWARD);
-        FRD.setDirection(DcMotor.Direction.REVERSE);
-        RLD.setDirection(DcMotor.Direction.FORWARD);
-        RRD.setDirection(DcMotor.Direction.REVERSE);
+        FLD.setDirection(DcMotor.Direction.REVERSE);
+        FRD.setDirection(DcMotor.Direction.FORWARD);
+        RLD.setDirection(DcMotor.Direction.REVERSE);
+        RRD.setDirection(DcMotor.Direction.FORWARD);
         //Stop all motors when robot is initialized
         brake();
 
@@ -78,11 +87,15 @@ public class robotBase {
         //Configure the NavXMicro for use
         //Be sure to Factory reset occasionally
         //Link -> https://pdocs.kauailabs.com/navx-micro/wp-content/uploads/2019/02/navx-micro_robotics_navigation_sensor_user_guide.pdf Page 35
-        navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx");
+        //navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx");
 
         //https://pdocs.kauailabs.com/navx-micro/guidance/gyroaccelerometer-calibration/
-        gyro = navxMicro;
+        //gyro = navxMicro;
 
+        modernRoboticsI2cGyro = hwMap.get(ModernRoboticsI2cGyro.class, "gyro");
+        gyroMR = (IntegratingGyroscope)modernRoboticsI2cGyro;
+
+        //NavX for auto and MR for teleOp?
     }
 
 
@@ -201,10 +214,11 @@ public class robotBase {
         double robotAngle = Math.atan2(Forward, Strafe) - Math.PI / 4;
 
         //Quantity to turn by (turn)
-        double current = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+        double current = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
         //This may need to be reversed
-        double error = (Heading-current)/180;
+        //And modifier (36) seems to scale properly
+        double error = (Heading-current)/36;
 
         //if error is positive, spin negative
         //if error is negative, spin positive
@@ -229,7 +243,7 @@ public class robotBase {
      * @param power is a double input from the mecanum method
      *
      * @return modified power value per the sigmoid curve
-     * graph here -> https://www.desmos.com/calculator/c6uav7pudi
+     * graph here -> https://www.desmos.com/calculator/mmmnuoh9qm
      */
     public static double powerScale(double power){
         //If power is negative, log this and save for later
@@ -243,11 +257,19 @@ public class robotBase {
         power = Math.abs(power);
 
         //modify to sigmoid
-        power = 1.05/(1 + Math.pow(Math.E, -10*(power-.5)));
-        //graph here -> https://www.desmos.com/calculator/c6uav7pudi
+        //delivers 0 power at 0, and 1 power at 1, varies in between
+        power = (1.2/(1 + Math.pow(Math.E, -10*(power-.5))))-.01;
+        //graph here -> https://www.desmos.com/calculator/mmmnuoh9qm
+
 
         //Make sure value falls between -1 and 1
-        return Range.clip(power * neg, -1, 1);
+
+        //Explaining the math,
+        //Take the maximum of -1 and the power * neg value (makes sure it's greater than -1
+        //Then take the minimum of 1 and the power * neg value (makes sure it's less than 1)
+        //Multiply the result by 100
+        //Then divide by 100 and get the floating point answer (rounds to 2 decimal places)
+        return Math.round(Math.min(Math.max(power * neg, -1),1)*100)/100.0;
     }
 
 
@@ -340,12 +362,12 @@ public class robotBase {
         double  steer;
 
         //Coefficient of turn
-        double  PCoeff = .015;
+        double  PCoeff = .5;
 
         //While active and within timeout
         while(opMode.opModeIsActive() && (period.seconds() < timeout)){
             //Pull the robot's current heading
-            double CurAngle = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+            double CurAngle = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
             //Find the error
             error = targetAngle - CurAngle;
@@ -367,44 +389,14 @@ public class robotBase {
         brake();
     }
 
-    //Placeholders
-    //initTfod needs new assets
-
-    public void startupIR(){
-        initTfod();
-        initVuforia();
-    }
-    public void startTFOD(){
-        tfod.activate();
-    }
-    public void stopTFOD(){
-        tfod.deactivate();
-    }
-    private void initVuforia () {
-        /*
-         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
-         */
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
-
-        parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.useExtendedTracking = false;
-        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
-
-        //  Instantiate the Vuforia engine
-        vuforia = ClassFactory.getInstance().createVuforia(parameters);
-
-    }
-    private void initTfod () {
-        int tfodMonitorViewId = hwMap.appContext.getResources().getIdentifier(
-                "tfodMonitorViewId", "id", hwMap.appContext.getPackageName());
-
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-        tfodParameters.minimumConfidence = .4;
-
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-
-        //These models need to be replaced
-        //https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2-tflite/#1
-        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_GOLD_MINERAL, LABEL_SILVER_MINERAL);
+    public double getBatteryVoltage() {
+        double result = Double.POSITIVE_INFINITY;
+        for (VoltageSensor sensor : hwMap.voltageSensor) {
+            double voltage = sensor.getVoltage();
+            if (voltage > 0) {
+                result = Math.min(result, voltage);
+            }
+        }
+        return result;
     }
 }

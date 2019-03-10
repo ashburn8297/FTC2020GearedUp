@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.graphics.Color;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -7,6 +9,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+
+import static android.os.SystemClock.sleep;
+
 
 @TeleOp(name="Mecanum Test")
 public class teleOp extends OpMode {
@@ -17,6 +22,8 @@ public class teleOp extends OpMode {
     private double gyroLockPressed = 0.0; //How long ago was it pressed?
     boolean gyroLock = false; //Is a heading currently known?
     double lockHead = 0.0; //Set default heading to 0 deg
+
+    private double headingResetPressed = 0.0; //How long ago was the heading reset?
 
     public void init() {
         /* Initialize the hardware variables.
@@ -29,8 +36,15 @@ public class teleOp extends OpMode {
         robot.runUsingEncoders();
         robot.baseFloat();
 
-        // Send telemetry message to signify robot waiting;
+        while (robot.modernRoboticsI2cGyro.isCalibrating())  {
+            telemetry.addData("calibrating", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
+            telemetry.update();
+            sleep(50);
+        }
+
+        // Send telemetry message to signify robot waiting
         telemetry.addData("Status", "Ready");
+        telemetry.update();
     }
 
     @Override
@@ -62,11 +76,11 @@ public class teleOp extends OpMode {
          */
 
         //Add gyro lock if not turning and gyroLock is toggled on.
-        if(Math.abs(gamepad2.right_stick_x)<.05 && gyroLockActive){
+        if(Math.abs(gamepad1.right_stick_x)<.05 && gyroLockActive){
             if(gyroLock == false) { //See if new heading has been set. Should update once.
                 //Find current heading
-                lockHead = robot.gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
-                //Let system know new hading has been located and not to refresh
+                lockHead = robot.gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+                //Let system know new heading has been located and not to refresh
                 gyroLock = true;
             }
             //Run off this reset heading
@@ -75,7 +89,7 @@ public class teleOp extends OpMode {
         else {
             //If previous checks fail (either turning or gyroLock is disabled
             //Use normal operation
-            robot.mecanum(gamepad1.left_stick_x, -gamepad1.left_stick_y, gamepad2.right_stick_x);
+            robot.mecanum(gamepad1.left_stick_x, -gamepad1.left_stick_y, gamepad1.right_stick_x);
             //Reset heading status to not found
             gyroLock = false;
         }
@@ -88,15 +102,30 @@ public class teleOp extends OpMode {
             gyroLockPressed = runtime.seconds() + .5;
         }
 
+        if(gamepad1.y && runtime.seconds() > headingResetPressed){
+            //Reset gyro heading
+            robot.modernRoboticsI2cGyro.resetZAxisIntegrator();
+            lockHead = 0.0;
+            //Set timer so that pause is reset to .5s
+            headingResetPressed = runtime.seconds() +.5;
+        }
+
 
         telemetry.addData("Time", runtime.seconds());
-        telemetry.addData("GyroLock", gyroLockActive ? "Available" : "Offline");
-        telemetry.addData("Controller X", gamepad1.left_stick_x);
-        telemetry.addData("Controller Y", -gamepad1.left_stick_y);
-        telemetry.addData("FL", robot.FLD.getPower());
-        telemetry.addData("FR", robot.FRD.getPower());
-        telemetry.addData("RL", robot.RLD.getPower());
-        telemetry.addData("RR", robot.RRD.getPower());
+        telemetry.addData("GyroLock", gyroLockActive ? "Online" : "Offline");
+        telemetry.addData("Heading", robot.gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
+        telemetry.addData("Target", lockHead);
+        telemetry.addLine("Left Joystick |")
+                .addData("x", gamepad1.left_stick_x)
+                .addData("y", -gamepad1.left_stick_y);
+        telemetry.addLine("Right Joystick |")
+                .addData("x",gamepad1.right_stick_x);
+        telemetry.addLine("Front Motor Powers")
+                .addData("FL", robot.FLD.getPower())
+                .addData("FR", robot.FRD.getPower());
+        telemetry.addLine("Rear Motor Powers")
+                .addData("RL", robot.RLD.getPower())
+                .addData("RR", robot.RRD.getPower());
         telemetry.update();
     }
 
