@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.android.AndroidTextToSpeech;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -32,12 +33,11 @@ public class robotBase {
     public DcMotor RLD                  = null; //Rear Left Drive Motor, "RLD"
     public DcMotor RRD                  = null; //Rear Right Drive Motor, "RRD"
 
-    //IntegratingGyroscope gyroNV;                  //For polymorphism
-
-    //NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope
+    IntegratingGyroscope gyroNV;                  //For polymorphism
+    NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope, "navx"
 
     IntegratingGyroscope gyroMR;
-    ModernRoboticsI2cGyro modernRoboticsI2cGyro;
+    ModernRoboticsI2cGyro modernRoboticsI2cGyro;    //"gyro"
 
     public static final int REV_Planetary_Ticks_Per_Rev = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
     public static final double wheel_diameter           = 4.0; //Diameter of wheel
@@ -84,18 +84,17 @@ public class robotBase {
         //Set all motors so when zero power is issues, motors to not actively resist (brake)
         baseFloat();
 
-        //Configure the NavXMicro for use
         //Be sure to Factory reset occasionally
         //Link -> https://pdocs.kauailabs.com/navx-micro/wp-content/uploads/2019/02/navx-micro_robotics_navigation_sensor_user_guide.pdf Page 35
-        //navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx");
-
         //https://pdocs.kauailabs.com/navx-micro/guidance/gyroaccelerometer-calibration/
-        //gyro = navxMicro;
 
-        modernRoboticsI2cGyro = hwMap.get(ModernRoboticsI2cGyro.class, "gyro");
+        //Configure the NavXMicro for use
+        navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx"); //Used for auto
+        gyroNV = navxMicro;
+
+        //Configure MR Gyro for use
+        modernRoboticsI2cGyro = hwMap.get(ModernRoboticsI2cGyro.class, "gyro"); //Used for teleOp
         gyroMR = (IntegratingGyroscope)modernRoboticsI2cGyro;
-
-        //NavX for auto and MR for teleOp?
     }
 
 
@@ -224,10 +223,10 @@ public class robotBase {
         //if error is negative, spin positive
 
         //double vX represents the velocities sent to each motor
-        final double v1 = r * Math.cos(robotAngle) + error;
-        final double v2 = r * Math.sin(robotAngle) - error;
-        final double v3 = r * Math.sin(robotAngle) + error;
-        final double v4 = r * Math.cos(robotAngle) - error;
+        final double v1 = r * Math.cos(robotAngle) - error;
+        final double v2 = r * Math.sin(robotAngle) + error;
+        final double v3 = r * Math.sin(robotAngle) - error;
+        final double v4 = r * Math.cos(robotAngle) + error;
 
         //Ramp these values with powerScale's values.
         FLD.setPower(powerScale(v1));
@@ -243,7 +242,7 @@ public class robotBase {
      * @param power is a double input from the mecanum method
      *
      * @return modified power value per the sigmoid curve
-     * graph here -> https://www.desmos.com/calculator/mmmnuoh9qm
+     * graph here -> https://www.desmos.com/calculator/7ehynwbhn6
      */
     public static double powerScale(double power){
         //If power is negative, log this and save for later
@@ -281,13 +280,15 @@ public class robotBase {
      * @param timeout maximum amount of time for the action to occur
      * @param speed how quickly to translate
      * @param opMode the current state of the opMode
+     *
+     * @TODO Possibly add gyro steerinmg here
+     * @TODO Confirm that this system works
      */
-    public void translate(double xInches, double zInches, double timeout, double speed, LinearOpMode opMode){
+    public void translate(double xInches, double zInches, double timeout, double speed, LinearOpMode opMode, Telemetry t){
         //Create a local timer
         ElapsedTime period  = new ElapsedTime();
 
         runToPosition();
-        resetEncoders();
 
         int FLTarget = (int) ((zInches * ticks_per_inch) - (xInches * ticks_per_inch));
         int FRTarget = (int) ((zInches * ticks_per_inch) + (xInches * ticks_per_inch));
@@ -316,10 +317,14 @@ public class robotBase {
             FRD.setPower(vel);
             RLD.setPower(vel);
             RRD.setPower(vel);
+
+            t.addData("Distance","%.2f",curPos/endPos);
+            t.update();
         }
 
         //Stop when done
         brake();
+        resetEncoders();
 
         //Revert to previous running state
         runUsingEncoders();
@@ -334,15 +339,15 @@ public class robotBase {
      * @param endPos the encoder's desired ending value
      * @return modified value for encoder ramp
      *
-     * graph here -> https://www.desmos.com/calculator/bprnntmxxz
+     * Link --> https://www.desmos.com/calculator/rivwydemit
      */
     public static double powerRamp(double speed, double curPos, double endPos){
         double pos = curPos/endPos; //provides double of percentage to end
-        if(pos < .5){
-            return speed * ((1.5 * pos) + .25);
+        if(pos < .75){
+            return speed;
         }
         else{
-            return speed * ((-1.5 * pos) + 1.75);
+            return speed * ((-4 * pos) + 4);
         }
     }
 
@@ -354,8 +359,10 @@ public class robotBase {
      * @param speed how quickly to turn about the point
      * @param timeout maximum amount of time for the action to occur
      * @param opMode the current state of the opMode
+     *
+     * @TODO Mesh with NavX
      */
-    public void turn(double targetAngle, double speed, double timeout, LinearOpMode opMode) {
+    public void turn(double targetAngle, double speed, double timeout, LinearOpMode opMode, Telemetry t) {
         //Create a local timer
         ElapsedTime period = new ElapsedTime();
         double  error;
@@ -363,11 +370,12 @@ public class robotBase {
 
         //Coefficient of turn
         double  PCoeff = .5;
+        runUsingEncoders();
 
         //While active and within timeout
         while(opMode.opModeIsActive() && (period.seconds() < timeout)){
             //Pull the robot's current heading
-            double CurAngle = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+            double CurAngle = gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
             //Find the error
             error = targetAngle - CurAngle;
@@ -383,6 +391,10 @@ public class robotBase {
                 speed  = speed * steer;
                 mecanum(0.0, 0.0, speed);
             }
+
+            t.addData("Current Angle", gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
+            t.addData("Target Angle", targetAngle);
+            t.update();
             opMode.idle();
         }
         //Stop when done.

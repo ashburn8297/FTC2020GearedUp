@@ -37,7 +37,7 @@ public class teleOp extends OpMode {
         robot.baseFloat();
 
         while (robot.modernRoboticsI2cGyro.isCalibrating())  {
-            telemetry.addData("calibrating", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
+            telemetry.addData("Calibrating", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
             telemetry.update();
             sleep(50);
         }
@@ -61,18 +61,7 @@ public class teleOp extends OpMode {
 
 
         /**
-         * @TODO Confirm gyro still works after transition to teleOp
-         * @TODO Check over mecanum code
          * @TODO See if auto.this works for autonomous instructions
-         */
-
-
-        /* This test TeleOp aims to accomplish the following:
-         * - Allow both normal operation and gyro-locked heading control
-         *
-         * It does this by:
-         * Monitoring the turn axis, and if the input is less than .05 (deadzone) and the system is online (gyroLockActive), the robot should lock heading and maintain it
-         * But, if the turn axis is greater than .05 or the gyroLock is toggled off, the robot reverts to normal operation and accepts all three inputs without a gyro lock.
          */
 
         //Add gyro lock if not turning and gyroLock is toggled on.
@@ -80,6 +69,7 @@ public class teleOp extends OpMode {
             if(gyroLock == false) { //See if new heading has been set. Should update once.
                 //Find current heading
                 lockHead = robot.gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+
                 //Let system know new heading has been located and not to refresh
                 gyroLock = true;
             }
@@ -90,6 +80,7 @@ public class teleOp extends OpMode {
             //If previous checks fail (either turning or gyroLock is disabled
             //Use normal operation
             robot.mecanum(gamepad1.left_stick_x, -gamepad1.left_stick_y, gamepad1.right_stick_x);
+
             //Reset heading status to not found
             gyroLock = false;
         }
@@ -98,34 +89,37 @@ public class teleOp extends OpMode {
         if(gamepad1.x && runtime.seconds() > gyroLockPressed){
             //Negate the current state of gyroLockActive (toggle)
             gyroLockActive = !gyroLockActive;
+
             //Set timer so that pause is reset to .5s
             gyroLockPressed = runtime.seconds() + .5;
         }
 
+        //If y is pressed, reset Z axis heading and target heading
         if(gamepad1.y && runtime.seconds() > headingResetPressed){
-            //Reset gyro heading
+            //Reset gyro and target heading
             robot.modernRoboticsI2cGyro.resetZAxisIntegrator();
             lockHead = 0.0;
+
             //Set timer so that pause is reset to .5s
             headingResetPressed = runtime.seconds() +.5;
         }
 
-
-        telemetry.addData("Time", runtime.seconds());
+        //------------------------------------------------------------------------------------------
+        telemetry.addData("Time", Math.round(runtime.seconds()));
         telemetry.addData("GyroLock", gyroLockActive ? "Online" : "Offline");
         telemetry.addData("Heading", robot.gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
         telemetry.addData("Target", lockHead);
         telemetry.addLine("Left Joystick |")
-                .addData("x", gamepad1.left_stick_x)
-                .addData("y", -gamepad1.left_stick_y);
+                .addData(" x","%.2f", gamepad1.left_stick_x)
+                .addData("y","%.2f", -gamepad1.left_stick_y);
         telemetry.addLine("Right Joystick |")
-                .addData("x",gamepad1.right_stick_x);
+                .addData(" x","%.2f", gamepad1.right_stick_x);
         telemetry.addLine("Front Motor Powers")
-                .addData("FL", robot.FLD.getPower())
-                .addData("FR", robot.FRD.getPower());
+                .addData("FL","%.2f", robot.FLD.getPower())
+                .addData("FR","%.2f", robot.FRD.getPower());
         telemetry.addLine("Rear Motor Powers")
-                .addData("RL", robot.RLD.getPower())
-                .addData("RR", robot.RRD.getPower());
+                .addData("RL","%.2f", robot.RLD.getPower())
+                .addData("RR","%.2f", robot.RRD.getPower());
         telemetry.update();
     }
 
