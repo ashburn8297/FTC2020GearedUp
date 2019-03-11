@@ -94,7 +94,7 @@ public class robotBase {
 
         //Configure MR Gyro for use
         modernRoboticsI2cGyro = hwMap.get(ModernRoboticsI2cGyro.class, "gyro"); //Used for teleOp
-        gyroMR = (IntegratingGyroscope)modernRoboticsI2cGyro;
+        gyroMR = modernRoboticsI2cGyro;
     }
 
 
@@ -281,7 +281,7 @@ public class robotBase {
      * @param speed how quickly to translate
      * @param opMode the current state of the opMode
      *
-     * @TODO Possibly add gyro steerinmg here
+     * @TODO Possibly add gyro steering here
      * @TODO Confirm that this system works
      */
     public void translate(double xInches, double zInches, double timeout, double speed, LinearOpMode opMode, Telemetry t){
@@ -319,6 +319,7 @@ public class robotBase {
             RRD.setPower(vel);
 
             t.addData("Distance","%.2f",curPos/endPos);
+            t.addData("Time","%.1f", period.seconds());
             t.update();
         }
 
@@ -394,6 +395,7 @@ public class robotBase {
 
             t.addData("Current Angle", gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
             t.addData("Target Angle", targetAngle);
+            t.addData("Time","%.1f", period.seconds());
             t.update();
             opMode.idle();
         }
@@ -409,6 +411,6 @@ public class robotBase {
                 result = Math.min(result, voltage);
             }
         }
-        return result;
+        return Math.round(result*100)/100;
     }
 }
