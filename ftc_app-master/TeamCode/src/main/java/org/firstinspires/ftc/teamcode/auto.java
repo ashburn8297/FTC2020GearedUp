@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 @Autonomous(name="Strafe Test")
 public class auto extends LinearOpMode {
     robotBase robot       = new robotBase();
@@ -24,7 +26,13 @@ public class auto extends LinearOpMode {
         //calibrate gyro
         runtime.reset();
         while (!isStopRequested() && robot.navxMicro.isCalibrating())  {
-            telemetry.addData("Calibrating", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
+            telemetry.addData("Calibrating NavX", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
+            telemetry.update();
+            sleep(50);
+        }
+
+        while (!isStopRequested() && robot.modernRoboticsI2cGyro.isCalibrating())  {
+            telemetry.addData("Calibrating MR", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
             telemetry.update();
             sleep(50);
         }
@@ -34,12 +42,13 @@ public class auto extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
+        //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        robot.translate(10, 0, 3.0, .4, auto.this);
+        robot.translate(0, 40, 10.0, 1.0, auto.this, telemetry);
         sleep(500);
 
-        robot.turn(45, .25, 2.0, auto.this);
+        robot.turn(45, .25, 4.0, auto.this, telemetry);
         sleep(500);
 
         stop();
