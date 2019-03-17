@@ -115,10 +115,10 @@ public class teleOp extends OpMode {
         telemetry.addLine("Right Joystick |")
                 .addData(" x","%.2f", gamepad1.right_stick_x);
         telemetry.addLine("Front Motor Powers")
-                .addData("FL","%.2f", robot.FLD.getPower())
+                .addData(" FL","%.2f", robot.FLD.getPower())
                 .addData("FR","%.2f", robot.FRD.getPower());
         telemetry.addLine("Rear Motor Powers")
-                .addData("RL","%.2f", robot.RLD.getPower())
+                .addData(" RL","%.2f", robot.RLD.getPower())
                 .addData("RR","%.2f", robot.RRD.getPower());
         telemetry.update();
     }
