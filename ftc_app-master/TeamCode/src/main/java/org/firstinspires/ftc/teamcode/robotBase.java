@@ -4,26 +4,18 @@ import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorControllerEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IntegratingGyroscope;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.android.AndroidTextToSpeech;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
-
-import static org.firstinspires.ftc.robotcore.external.tfod.TfodRoverRuckus.LABEL_GOLD_MINERAL;
-import static org.firstinspires.ftc.robotcore.external.tfod.TfodRoverRuckus.LABEL_SILVER_MINERAL;
-import static org.firstinspires.ftc.robotcore.external.tfod.TfodRoverRuckus.TFOD_MODEL_ASSET;
 
 public class robotBase {
 
@@ -107,8 +99,6 @@ public class robotBase {
         RRD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-
-
     //Run the robot using encoder values as velocity check
     public void runUsingEncoders(){
         FLD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -116,8 +106,6 @@ public class robotBase {
         RLD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         RRD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-
-
 
     //Run the robot using ecoders to run to a specified position (encoder ticks);
     public void runToPosition(){
@@ -127,16 +115,12 @@ public class robotBase {
         RRD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 
-
-
     public void resetEncoders(){
         FLD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         FRD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RLD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RRD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
-
-
 
     //Set all motors to float when zero power command is issued
     public void baseFloat(){
@@ -146,8 +130,6 @@ public class robotBase {
         RRD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
 
-
-
     //Set all motors to actively resist when zero power command is issued
     public void baseBrake(){
         FLD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -155,8 +137,6 @@ public class robotBase {
         RLD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RRD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
-
-
 
     //Set all motors to zero power
     public void brake(){
@@ -301,6 +281,10 @@ public class robotBase {
         RRD.setTargetPosition(RRTarget);
 
         period.reset();
+
+        //Reset gyro heading metric
+        modernRoboticsI2cGyro.resetZAxisIntegrator();
+
         while((period.seconds() < timeout) && (FLD.isBusy() || FRD.isBusy() || RLD.isBusy() || RRD.isBusy()) && opMode.opModeIsActive()){
 
             double curPos = (Math.abs(FLD.getCurrentPosition())+Math.abs(FRD.getCurrentPosition())+Math.abs(RLD.getCurrentPosition())+Math.abs(RRD.getCurrentPosition()))/4; //The average robot's current position
@@ -311,14 +295,24 @@ public class robotBase {
              * Mecanum slippage may undershoot these distances, check vectoring.
              */
 
+            //Quantity to turn by (turn)
+            double current = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+
+            //This may need to be reversed
+            //And modifier (36) seems to scale properly
+            double error = (0-current)/36;
+
             //Using average positions, compute system's velocity
             double vel = powerRamp(Math.abs(speed), curPos, endPos);
-            FLD.setPower(vel);
-            FRD.setPower(vel);
-            RLD.setPower(vel);
-            RRD.setPower(vel);
 
             t.addData("Distance","%.2f",curPos/endPos);
+            //Apply these velocities along with turning values
+            FLD.setPower(vel - error);
+            FRD.setPower(vel + error);
+            RLD.setPower(vel - error);
+            RRD.setPower(vel + error);
+
+            t.addData("Distance","%.2f",(curPos/endPos));
             t.addData("Time","%.1f", period.seconds());
             t.update();
         }
