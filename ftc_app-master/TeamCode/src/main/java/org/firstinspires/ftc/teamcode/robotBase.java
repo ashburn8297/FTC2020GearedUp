@@ -252,77 +252,41 @@ public class robotBase {
     }
 
 
-
     /**A method to drive to a specific position via a desired (X,Z) pair given in inches.
      *
      * @param xInches desired X axis translation (left right)
-     * @param zInches desired Z axis translation (front back)
+     * @param yInches desired Z axis translation (front back)
      * @param timeout maximum amount of time for the action to occur
      * @param speed how quickly to translate
      * @param opMode the current state of the opMode
+     * @param t the current opMode's telemetry object, not opMode param
      *
-     * @TODO Possibly add gyro steering here
-     * @TODO Confirm that this system works
+     * @TODO Design this sysetem using gyro and dead wheels
      */
-    public void translate(double xInches, double zInches, double timeout, double speed, LinearOpMode opMode, Telemetry t){
+    public void translate(double xInches, double yInches, double timeout, double speed, LinearOpMode opMode, Telemetry t){
         //Create a local timer
         ElapsedTime period  = new ElapsedTime();
 
-        runToPosition();
+        runUsingEncoders();
 
-        int FLTarget = (int) ((zInches * ticks_per_inch) - (xInches * ticks_per_inch));
-        int FRTarget = (int) ((zInches * ticks_per_inch) + (xInches * ticks_per_inch));
-        int RLTarget = (int) ((zInches * ticks_per_inch) + (xInches * ticks_per_inch));
-        int RRTarget = (int) ((zInches * ticks_per_inch) - (xInches * ticks_per_inch));
+        int xTarget = (int)(xInches * 1000);
+        int yTarget = (int)(yInches * 1000); //Where 1000 is ticks per inch of dead wheel in each axis
 
-        FLD.setTargetPosition(FLTarget);
-        FRD.setTargetPosition(FRTarget);
-        RLD.setTargetPosition(RLTarget);
-        RRD.setTargetPosition(RRTarget);
-
-        period.reset();
+        period.reset(); //Start the clock
 
         //Reset gyro heading metric
-        modernRoboticsI2cGyro.resetZAxisIntegrator();
+        modernRoboticsI2cGyro.resetZAxisIntegrator(); //Get a fresh heading to track (0)
 
-        while((period.seconds() < timeout) && (FLD.isBusy() || FRD.isBusy() || RLD.isBusy() || RRD.isBusy()) && opMode.opModeIsActive()){
+        //Loop while X and Y directional free wheels < desired distance &...
+        //steer using heading to compensate for drift
 
-            double curPos = (Math.abs(FLD.getCurrentPosition())+Math.abs(FRD.getCurrentPosition())+Math.abs(RLD.getCurrentPosition())+Math.abs(RRD.getCurrentPosition()))/4; //The average robot's current position
-            double endPos = (Math.abs(FLTarget)+Math.abs(FRTarget)+Math.abs(RLTarget)+Math.abs(RRTarget))/4;//The average robot's ending position
 
-            /*
-             * This method of position tracking works because encoders are reset.
-             * Mecanum slippage may undershoot these distances, check vectoring.
-             */
-
-            //Quantity to turn by (turn)
-            double current = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
-
-            //This may need to be reversed
-            //And modifier (36) seems to scale properly
-            double error = (0-current)/36;
-
-            //Using average positions, compute system's velocity
-            double vel = powerRamp(Math.abs(speed), curPos, endPos);
-
-            t.addData("Distance","%.2f",curPos/endPos);
-            //Apply these velocities along with turning values
-            FLD.setPower(vel - error);
-            FRD.setPower(vel + error);
-            RLD.setPower(vel - error);
-            RRD.setPower(vel + error);
-
-            t.addData("Distance","%.2f",(curPos/endPos));
-            t.addData("Time","%.1f", period.seconds());
-            t.update();
-        }
+        //Let speed very between <.1 * speed, speed>
 
         //Stop when done
-        brake();
-        resetEncoders();
+        brake(); //This may not be necessary for continuous operation between movements
+        resetEncoders(); //See line above
 
-        //Revert to previous running state
-        runUsingEncoders();
     }
 
 
@@ -334,16 +298,10 @@ public class robotBase {
      * @param endPos the encoder's desired ending value
      * @return modified value for encoder ramp
      *
-     * Link --> https://www.desmos.com/calculator/rivwydemit
+     * @TODO design algorithm
      */
     public static double powerRamp(double speed, double curPos, double endPos){
-        double pos = curPos/endPos; //provides double of percentage to end
-        if(pos < .75){
-            return speed;
-        }
-        else{
-            return speed * ((-4 * pos) + 4);
-        }
+       return speed;
     }
 
 

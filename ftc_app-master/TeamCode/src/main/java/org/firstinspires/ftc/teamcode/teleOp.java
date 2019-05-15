@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.graphics.Color;
-
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -85,6 +83,7 @@ public class teleOp extends OpMode {
             gyroLock = false;
         }
 
+        //------------------------------------------------------------------------------------------
         //If x is pressed and has not been pressed in the last half second
         if(gamepad1.x && runtime.seconds() > gyroLockPressed){
             //Negate the current state of gyroLockActive (toggle)
