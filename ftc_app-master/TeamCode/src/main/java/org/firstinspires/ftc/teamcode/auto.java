@@ -16,7 +16,7 @@ public class auto extends LinearOpMode {
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
-        robot.init(hardwareMap);
+        robot.init(hardwareMap, telemetry);
 
         //Start the robot at zero power, using encoders, and float zero power
         robot.brake();
@@ -45,10 +45,10 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        robot.translate(0, 40, 10.0, 1.0, auto.this, telemetry);
+        robot.translate(0, 40, 10.0, 1.0, true,auto.this, telemetry);
         sleep(500);
 
-        robot.turn(45, .25, 4.0, auto.this, telemetry);
+        robot.turn(45, .25, 4.0, true,auto.this, telemetry);
         sleep(500);
 
         stop();

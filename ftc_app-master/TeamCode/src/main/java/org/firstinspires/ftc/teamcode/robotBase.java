@@ -25,11 +25,11 @@ public class robotBase {
     public DcMotor RLD                  = null; //Rear Left Drive Motor, "RLD"
     public DcMotor RRD                  = null; //Rear Right Drive Motor, "RRD"
 
-    IntegratingGyroscope gyroNV;                  //For polymorphism
-    NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope, "navx"
+    IntegratingGyroscope gyroNV;                //For polymorphism
+    NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope, "navx" on phones
 
     IntegratingGyroscope gyroMR;
-    ModernRoboticsI2cGyro modernRoboticsI2cGyro;    //"gyro"
+    ModernRoboticsI2cGyro modernRoboticsI2cGyro;    //"gyro" on phones
 
     public static final int REV_Planetary_Ticks_Per_Rev = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
     public static final double wheel_diameter           = 4.0; //Diameter of wheel
@@ -52,7 +52,7 @@ public class robotBase {
     }
 
     /* Initialize standard Hardware interfaces */
-    public void init(HardwareMap ahwMap) {
+    public void init(HardwareMap ahwMap, Telemetry t) {
         hwMap = ahwMap;
 
         //Initialize the four drive base motors
@@ -76,17 +76,22 @@ public class robotBase {
         //Set all motors so when zero power is issues, motors to not actively resist (brake)
         baseFloat();
 
-        //Be sure to Factory reset occasionally
-        //Link -> https://pdocs.kauailabs.com/navx-micro/wp-content/uploads/2019/02/navx-micro_robotics_navigation_sensor_user_guide.pdf Page 35
-        //https://pdocs.kauailabs.com/navx-micro/guidance/gyroaccelerometer-calibration/
+        /**@Important
+         * Be sure to Factory reset occasionally
+         * Link -> https://pdocs.kauailabs.com/navx-micro/wp-content/uploads/2019/02/navx-micro_robotics_navigation_sensor_user_guide.pdf Page 35
+         * https://pdocs.kauailabs.com/navx-micro/guidance/gyroaccelerometer-calibration/
+         * */
 
         //Configure the NavXMicro for use
         navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx"); //Used for auto
         gyroNV = navxMicro;
+        t.addData("gyroNV","ONLINE");
 
         //Configure MR Gyro for use
         modernRoboticsI2cGyro = hwMap.get(ModernRoboticsI2cGyro.class, "gyro"); //Used for teleOp
         gyroMR = modernRoboticsI2cGyro;
+        t.addData("gyroMR","ONLINE");
+        t.update();
     }
 
 
@@ -146,8 +151,6 @@ public class robotBase {
         RRD.setPower(0);
     }
 
-
-
      /**Control a mecanum drive base with three double inputs
      *
      * @param Strafe is the first double X value which represents how the base should strafe
@@ -176,8 +179,6 @@ public class robotBase {
         RLD.setPower(powerScale(v3));
         RRD.setPower(powerScale(v4));
     }
-
-
 
     /**Strafe a mecanum drive where no turn is sent, robot attempts to maintain heading
      *
@@ -215,8 +216,6 @@ public class robotBase {
         RRD.setPower(powerScale(v4));
     }
 
-
-
     /**Scale input to a modified sigmoid curve
      *
      * @param power is a double input from the mecanum method
@@ -243,7 +242,7 @@ public class robotBase {
 
         //Make sure value falls between -1 and 1
 
-        //Explaining the math,
+        //Explaining the math;
         //Take the maximum of -1 and the power * neg value (makes sure it's greater than -1
         //Then take the minimum of 1 and the power * neg value (makes sure it's less than 1)
         //Multiply the result by 100
@@ -251,26 +250,31 @@ public class robotBase {
         return Math.round(Math.min(Math.max(power * neg, -1),1)*100)/100.0;
     }
 
-
-    /**A method to drive to a specific position via a desired (X,Z) pair given in inches.
+    /**A method to drive to a specific position via a desired (X,Y) pair given in inches.
      *
      * @param xInches desired X axis translation (left right)
      * @param yInches desired Z axis translation (front back)
      * @param timeout maximum amount of time for the action to occur
      * @param speed how quickly to translate
+     * @param fullStop should the robot stop after executing the movement?
      * @param opMode the current state of the opMode
      * @param t the current opMode's telemetry object, not opMode param
      *
      * @TODO Design this sysetem using gyro and dead wheels
      */
-    public void translate(double xInches, double yInches, double timeout, double speed, LinearOpMode opMode, Telemetry t){
+    public void translate(double xInches, double yInches, double timeout, double speed, boolean fullStop, LinearOpMode opMode, Telemetry t){
         //Create a local timer
         ElapsedTime period  = new ElapsedTime();
 
         runUsingEncoders();
 
         int xTarget = (int)(xInches * 1000);
+        //int xError = current encoder reading
+        int xTolerance = 20;
+
         int yTarget = (int)(yInches * 1000); //Where 1000 is ticks per inch of dead wheel in each axis
+        //int yError = current encoder reading
+        int yTolerance = 20;
 
         period.reset(); //Start the clock
 
@@ -278,18 +282,23 @@ public class robotBase {
         modernRoboticsI2cGyro.resetZAxisIntegrator(); //Get a fresh heading to track (0)
 
         //Loop while X and Y directional free wheels < desired distance &...
-        //steer using heading to compensate for drift
+        //while(opMode.opModeIsActive() && xError > xTolerance && yError > yTolerance && period.seconds() < timeout){
+            //Steer using heading to compensate for drift
 
+            //Update xError and yError
 
-        //Let speed very between <.1 * speed, speed>
+            //Let speed very between <.1 * speed, speed>
 
-        //Stop when done
-        brake(); //This may not be necessary for continuous operation between movements
-        resetEncoders(); //See line above
-
+            //While looping:
+            //t.update();
+            //opMode.idle();
+        //}
+        //If requested, bring the drivebase to a full stop
+        if(fullStop == true) {
+            brake();
+            resetEncoders();
+        }
     }
-
-
 
     /**
      *
@@ -304,18 +313,18 @@ public class robotBase {
        return speed;
     }
 
-
-
-    /**Turn towards a given heading
+    /**Turn towards a given heading (deg)
      *
      * @param targetAngle desire heading post-turn
      * @param speed how quickly to turn about the point
      * @param timeout maximum amount of time for the action to occur
+     * @param fullStop should the robot stop after executing the movement?
      * @param opMode the current state of the opMode
+     * @param t the current opMode's telemetry object, not opMode param
      *
      * @TODO Mesh with NavX
      */
-    public void turn(double targetAngle, double speed, double timeout, LinearOpMode opMode, Telemetry t) {
+    public void turn(double targetAngle, double speed, double timeout, boolean fullStop, LinearOpMode opMode, Telemetry t) {
         //Create a local timer
         ElapsedTime period = new ElapsedTime();
         double  error;
@@ -351,8 +360,9 @@ public class robotBase {
             t.update();
             opMode.idle();
         }
-        //Stop when done.
-        brake();
+        if(fullStop == true) {
+            brake();
+        }
     }
 
     public double getBatteryVoltage() {
