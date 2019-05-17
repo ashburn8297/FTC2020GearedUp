@@ -4,8 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-
 @Autonomous(name="Strafe Test")
 public class auto extends LinearOpMode {
     robotBase robot       = new robotBase();
@@ -17,6 +15,7 @@ public class auto extends LinearOpMode {
          * The init() method of the hardware class does all the work here
          */
         robot.init(hardwareMap, telemetry);
+        sleep(500);
 
         //Start the robot at zero power, using encoders, and float zero power
         robot.brake();

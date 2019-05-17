@@ -28,7 +28,7 @@ public class teleOp extends OpMode {
          * The init() method of the hardware class does all the work here
          */
         robot.init(hardwareMap, telemetry);
-
+        sleep(500);
         //Start the robot at zero power, using encoders, and float zero power
         robot.brake();
         robot.runUsingEncoders();
@@ -57,10 +57,8 @@ public class teleOp extends OpMode {
     @Override
     public void loop(){
 
+        //Maybe take in controller inputs and distribute via variables, not hardware calls
 
-        /**
-         * @TODO See if auto.this works for autonomous instructions
-         */
 
         //Add gyro lock if not turning and gyroLock is toggled on.
         if(Math.abs(gamepad1.right_stick_x)<.05 && gyroLockActive){
@@ -124,5 +122,7 @@ public class teleOp extends OpMode {
 
     @Override
     public void stop(){
+        telemetry.addData("Stopped after", runtime.seconds());
+        telemetry.update();
     }
 }
