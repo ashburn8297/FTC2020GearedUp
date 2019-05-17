@@ -32,11 +32,11 @@ public class robotBase {
     ModernRoboticsI2cGyro modernRoboticsI2cGyro;    //"gyro" on phones
 
     public static final int REV_Planetary_Ticks_Per_Rev = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
-    public static final double wheel_diameter           = 4.0; //Diameter of wheel
+    public static final double wheel_diameter           = 4.0; //Diameter of wheel, likely dead wheel
     public static final double drive_reduction          = 1.0; //This is < 1.0 if Geared UP
     public static final double ticks_per_inch           = (REV_Planetary_Ticks_Per_Rev * drive_reduction)/(wheel_diameter * Math.PI);
 
-    public static final double HEADING_THRESHOLD        = .75 ;
+    public static final double HEADING_THRESHOLD        = 2;
 
     public static final String VUFORIA_KEY = "AbEDH9P/////AAABmcFPgUDLz0tMh55QD8t9w6Bqxt3h/G+JEMdItgpjoR+S1FFRIeF/w2z5K7r/nUzRZKleksLHPglkfMKX0NltxxpVUpXqj+w6sGvedaNq449JZbEQxaYe4SU+3NNi0LBN879h9LZW9RxJFOMt7HfgssnBdg+3IsiwVKKYnovU+99oz3gJkcOtYhUS9ku3s0Wz2n6pOu3znT3bICiR0/480N63FS7d6Mk6sqN7mNyxVcRf8D5mqIMKVNGAjni9nSYensl8GAJWS1vYfZ5aQhXKs9BPM6mST5qf58Tg4xWoHltcyPp0x33tgQHBbcel0M9pYe/7ub1pmzvxeBqVgcztmzC7uHnosDO3/2MAMah8qijd";
     public VuforiaLocalizer vuforia;

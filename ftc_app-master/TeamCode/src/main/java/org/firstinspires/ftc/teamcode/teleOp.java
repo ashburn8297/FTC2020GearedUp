@@ -24,7 +24,8 @@ public class teleOp extends OpMode {
     private double headingResetPressed = 0.0; //How long ago was the heading reset?
 
     public void init() {
-        /* Initialize the hardware variables.
+        /*
+         * Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
         robot.init(hardwareMap, telemetry);
@@ -58,13 +59,13 @@ public class teleOp extends OpMode {
     public void loop(){
 
         //Maybe take in controller inputs and distribute via variables, not hardware calls
-
+        double headingCurrent = robot.gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
         //Add gyro lock if not turning and gyroLock is toggled on.
         if(Math.abs(gamepad1.right_stick_x)<.05 && gyroLockActive){
             if(gyroLock == false) { //See if new heading has been set. Should update once.
                 //Find current heading
-                lockHead = robot.gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+                lockHead = headingCurrent;
 
                 //Let system know new heading has been located and not to refresh
                 gyroLock = true;
@@ -104,7 +105,7 @@ public class teleOp extends OpMode {
         //------------------------------------------------------------------------------------------
         telemetry.addData("Time", Math.round(runtime.seconds()));
         telemetry.addData("GyroLock", gyroLockActive ? "Online" : "Offline");
-        telemetry.addData("Heading", robot.gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
+        telemetry.addData("Heading", headingCurrent);
         telemetry.addData("Target", lockHead);
         telemetry.addLine("Left Joystick |")
                 .addData(" x","%.2f", gamepad1.left_stick_x)
