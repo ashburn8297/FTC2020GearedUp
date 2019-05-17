@@ -43,7 +43,7 @@ public class robotBase {
     public TFObjectDetector tfod;
 
     /*Local opMode members*/
-    HardwareMap hwMap           =  null;
+    HardwareMap hwMap           = null;
     private ElapsedTime period  = new ElapsedTime();
 
     //Empty constructor for object creation.
@@ -112,7 +112,7 @@ public class robotBase {
         RRD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    //Run the robot using ecoders to run to a specified position (encoder ticks);
+    //Run the robot using encoders to run to a specified position (encoder ticks);
     public void runToPosition(){
         FLD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         FRD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -256,16 +256,15 @@ public class robotBase {
      * @param yInches desired Z axis translation (front back)
      * @param timeout maximum amount of time for the action to occur
      * @param speed how quickly to translate
-     * @param fullStop should the robot stop after executing the movement?
+     * @param endingSpeed what speed should the robot be moving at the end of the movement
      * @param opMode the current state of the opMode
      * @param t the current opMode's telemetry object, not opMode param
      *
      * @TODO Design this sysetem using gyro and dead wheels
      */
-    public void translate(double xInches, double yInches, double timeout, double speed, boolean fullStop, LinearOpMode opMode, Telemetry t){
+    public void translate(double xInches, double yInches, double timeout, double speed, double endingSpeed, LinearOpMode opMode, Telemetry t){
         //Create a local timer
         ElapsedTime period  = new ElapsedTime();
-
         runUsingEncoders();
 
         int xTarget = (int)(xInches * 1000);
@@ -286,15 +285,18 @@ public class robotBase {
             //Steer using heading to compensate for drift
 
             //Update xError and yError
+            //xError = xTarget - xCurr; ???
 
             //Let speed very between <.1 * speed, speed>
+
+            //Possibly incorporate the ramp down and the desired ending speed
 
             //While looping:
             //t.update();
             //opMode.idle();
         //}
         //If requested, bring the drivebase to a full stop
-        if(fullStop == true) {
+        if(endingSpeed < .01) {
             brake();
             resetEncoders();
         }
@@ -302,15 +304,23 @@ public class robotBase {
 
     /**
      *
-     * @param speed maximum desired speed (between 0 & 1)
+     * @param speedInit maximum desired speed (between 0 & 1)
+     * @param speedEnd desired ending speed (must be less then speedInit
      * @param curPos the encoder's current value
      * @param endPos the encoder's desired ending value
      * @return modified value for encoder ramp
      *
      * @TODO design algorithm
      */
-    public static double powerRamp(double speed, double curPos, double endPos){
-       return speed;
+    public static double powerRamp(double speedInit, double speedEnd, double curPos, double endPos){
+
+        //Be sure that the incoming values are within the acceptable bound
+        speedInit = Math.min(Math.max(speedInit, 0),1);
+        speedEnd  = Math.min(Math.max(speedEnd,0), speedInit);
+
+        //Speed manipulation algorithm
+
+        return speedInit;
     }
 
     /**Turn towards a given heading (deg)
