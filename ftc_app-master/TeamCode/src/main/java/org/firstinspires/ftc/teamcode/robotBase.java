@@ -73,7 +73,7 @@ public class robotBase {
         //Set all motors so that they begin without encoders enabled
         runWithoutEncoders();
 
-        //Set all motors so when zero power is issues, motors to not actively resist (brake)
+        //Set all motors so when zero power is issued, motors to not actively resist (brake)
         baseFloat();
 
         /**@Important
@@ -255,14 +255,14 @@ public class robotBase {
      * @param xInches desired X axis translation (left right)
      * @param yInches desired Z axis translation (front back)
      * @param timeout maximum amount of time for the action to occur
-     * @param speed how quickly to translate
+     * @param speedBegin how quickly to translate
      * @param endingSpeed what speed should the robot be moving at the end of the movement
      * @param opMode the current state of the opMode
      * @param t the current opMode's telemetry object, not opMode param
      *
      * @TODO Design this sysetem using gyro and dead wheels
      */
-    public void translate(double xInches, double yInches, double timeout, double speed, double endingSpeed, LinearOpMode opMode, Telemetry t){
+    public void translate(double xInches, double yInches, double timeout, double speedBegin, double endingSpeed, LinearOpMode opMode, Telemetry t){
         //Create a local timer
         ElapsedTime period  = new ElapsedTime();
         runUsingEncoders();
@@ -287,9 +287,10 @@ public class robotBase {
             //Update xError and yError
             //xError = xTarget - xCurr; ???
 
-            //Let speed very between <.1 * speed, speed>
-
+            //Calculate velocities from positions and deltas
             //Possibly incorporate the ramp down and the desired ending speed
+
+            //mecanumGyroLock(Xvel, Yvel, 0)
 
             //While looping:
             //t.update();
