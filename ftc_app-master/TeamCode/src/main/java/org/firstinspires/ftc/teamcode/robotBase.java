@@ -265,6 +265,8 @@ public class robotBase {
     public void translate(double xInches, double yInches, double timeout, double speed, double endingSpeed, LinearOpMode opMode, Telemetry t){
         //Create a local timer
         ElapsedTime period  = new ElapsedTime();
+
+        resetEncoders();
         runUsingEncoders();
 
         int xTarget = (int)(xInches * 1000);
@@ -280,18 +282,19 @@ public class robotBase {
         //Reset gyro heading metric
         modernRoboticsI2cGyro.resetZAxisIntegrator(); //Get a fresh heading to track (0)
 
+        double current = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+
         //Loop while X and Y directional free wheels < desired distance &...
         //while(opMode.opModeIsActive() && xError > xTolerance && yError > yTolerance && period.seconds() < timeout){
-            //Steer using heading to compensate for drift
 
-            //Update xError and yError
-            //xError = xTarget - xCurr; ???
+            //xPos =
+            //yPos =
 
-            //Let speed very between <.1 * speed, speed>
+            //xVel = powerRamp(speed, endingSpeed, xPos, xTarget);
+            //yVel = powerRamp(speed, endingSpeed, yPos, yTarget);
 
-            //Possibly incorporate the ramp down and the desired ending speed
+            //mecanumGyroLock(xVel, yVel, current)
 
-            //While looping:
             //t.update();
             //opMode.idle();
         //}
@@ -304,7 +307,7 @@ public class robotBase {
 
     /**
      *
-     * @param speedInit maximum desired speed (between 0 & 1)
+     * @param speedMax maximum desired speed (between 0 & 1)
      * @param speedEnd desired ending speed (must be less then speedInit
      * @param curPos the encoder's current value
      * @param endPos the encoder's desired ending value
@@ -312,15 +315,20 @@ public class robotBase {
      *
      * @TODO design algorithm
      */
-    public static double powerRamp(double speedInit, double speedEnd, double curPos, double endPos){
+    public static double powerRamp(double speedMax, double speedEnd, double curPos, double endPos){
+
+        double beginPos = 0;
 
         //Be sure that the incoming values are within the acceptable bound
-        speedInit = Math.min(Math.max(speedInit, 0),1);
-        speedEnd  = Math.min(Math.max(speedEnd,0), speedInit);
+        //  0<init<1 and 0<end<1
+        speedMax = Math.min(Math.max(speedMax, 0),1);
+        speedEnd  = Math.min(Math.max(speedEnd,  0),1);
+
+        double pct = (curPos/(endPos-beginPos)); //0 to 1 of how far along the path in that axis the robot is
 
         //Speed manipulation algorithm
 
-        return speedInit;
+        return speedMax;
     }
 
     /**Turn towards a given heading (deg)
