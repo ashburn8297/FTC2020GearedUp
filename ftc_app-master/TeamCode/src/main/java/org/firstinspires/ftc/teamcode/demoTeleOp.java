@@ -3,8 +3,8 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-
-@TeleOp(name="Demo Bot")
+//geet test
+@TeleOp(name="Demo Bot") //tam
 public class demoTeleOp extends OpMode {
     public DcMotor FLD                  = null; //Front Left Drive Motor, "FLD"
     public DcMotor FRD                  = null; //Front Right Drive Motor, "FRD"
