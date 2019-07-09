@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 //geet test
 @TeleOp(name="Demo Bot") //tam
-public class demoTeleOp extends OpMode {
+public class demoBotTeleOp extends OpMode {
     public DcMotor LD                  = null; //Front Left Drive Motor, "FLD"
     public DcMotor RD                  = null; //Front Right Drive Motor, "FRD"
     public void init() {

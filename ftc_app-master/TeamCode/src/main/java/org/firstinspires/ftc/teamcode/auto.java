@@ -44,12 +44,6 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        robot.translate(0, 40, 5.0, 1.0, 0.0,auto.this, telemetry);
-        sleep(500);
-
-        robot.turn(45, .25, 4.0, true,auto.this, telemetry);
-        sleep(500);
-
         stop();
 
     }

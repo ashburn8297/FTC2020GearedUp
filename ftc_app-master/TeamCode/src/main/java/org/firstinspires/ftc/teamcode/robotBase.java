@@ -270,34 +270,33 @@ public class robotBase {
         runUsingEncoders();
 
         int xTarget = (int)(xInches * 1000);
-        //int xError = current encoder reading
         int xTolerance = 20;
 
         int yTarget = (int)(yInches * 1000); //Where 1000 is ticks per inch of dead wheel in each axis
-        //int yError = current encoder reading
         int yTolerance = 20;
 
         period.reset(); //Start the clock
 
-        //Reset gyro heading metric
-        modernRoboticsI2cGyro.resetZAxisIntegrator(); //Get a fresh heading to track (0)
+        //Calculate motor magnitudes , and vary between 0 & +/- 1.
+        //Then apply these values over some distance based on odometry reading.
 
-        double current = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+        double theta = Math.atan2(yInches, xInches) - Math.PI / 4;
 
-        //Loop while X and Y directional free wheels < desired distance &...
-        //while(opMode.opModeIsActive() && xError > xTolerance && yError > yTolerance && period.seconds() < timeout){
+        //Front Left and Right Rear
+        double v1 = Math.cos(theta);
+        //Front Right and Rear Left
+        double v2 = Math.sin(theta);
 
-            //xPos =
-            //yPos =
+        //How much to scale power to each pair of wheels
+        double mag = 0;
 
-            //xVel = powerRamp(speed, endingSpeed, xPos, xTarget);
-            //yVel = powerRamp(speed, endingSpeed, yPos, yTarget);
+        /*while(encoders are out of tolerance){
+            calculate mag value based on (distance to target)
+            apply to wheels
+            report progress and values via t
+        }*/
 
-            //mecanumGyroLock(xVel, yVel, current)
 
-            //t.update();
-            //opMode.idle();
-        //}
         //If requested, bring the drivebase to a full stop
         if(endingSpeed < .01) {
             brake();
@@ -381,6 +380,7 @@ public class robotBase {
         if(fullStop == true) {
             brake();
         }
+
     }
 
     public double getBatteryVoltage() {
