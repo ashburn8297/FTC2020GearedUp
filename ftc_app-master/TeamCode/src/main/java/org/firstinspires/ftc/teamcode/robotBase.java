@@ -306,22 +306,16 @@ public class robotBase {
 
     /**
      *
-     * @param speedMax maximum desired speed (between 0 & 1)
-     * @param speedEnd desired ending speed (must be less then speedInit
+     * @param beginPos the robot's beginning (starting) value
      * @param curPos the encoder's current value
      * @param endPos the encoder's desired ending value
+     * @param beginSpeed Desired beginning speed
+     * @param endSPeed Desired ending speed
      * @return modified value for encoder ramp
      *
      * @TODO design algorithm
      */
-    public static double powerRamp(double speedMax, double speedEnd, double curPos, double endPos){
-
-        double beginPos = 0;
-
-        //Be sure that the incoming values are within the acceptable bound
-        //  0<init<1 and 0<end<1
-        speedMax = Math.min(Math.max(speedMax, 0),1);
-        speedEnd  = Math.min(Math.max(speedEnd,  0),1);
+    public static double powerRamp(double beginPos, double curPos, double endPos, double beginSpeed, double speedEnd){
 
         double pct = (curPos/(endPos-beginPos)); //0 to 1 of how far along the path in that axis the robot is
 
