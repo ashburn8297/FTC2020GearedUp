@@ -180,42 +180,6 @@ public class robotBase {
         RRD.setPower(powerScale(v4));
     }
 
-    /**Strafe a mecanum drive where no turn is sent, robot attempts to maintain heading
-     *
-     * @param Strafe is the first double X value which represents how the base should strafe
-     * @param Forward is the only double Y value which represents how the base should drive forward
-     * @param Heading is the heading the robot should maintain
-     * */
-    public void mecanumGyroLock(double Strafe, double Forward, double Heading) {
-        //Find the magnitude of the controller's input
-        double r = Math.hypot(Strafe, Forward);
-
-        //returns point from +X axis to point (forward, strafe)
-        double robotAngle = Math.atan2(Forward, Strafe) - Math.PI / 4;
-
-        //Quantity to turn by (turn)
-        double current = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
-
-        //This may need to be reversed
-        //And modifier (36) seems to scale properly
-        double error = (Heading-current)/36;
-
-        //if error is positive, spin negative
-        //if error is negative, spin positive
-
-        //double vX represents the velocities sent to each motor
-        final double v1 = r * Math.cos(robotAngle) - error;
-        final double v2 = r * Math.sin(robotAngle) + error;
-        final double v3 = r * Math.sin(robotAngle) - error;
-        final double v4 = r * Math.cos(robotAngle) + error;
-
-        //Ramp these values with powerScale's values.
-        FLD.setPower(powerScale(v1));
-        FRD.setPower(powerScale(v2));
-        RLD.setPower(powerScale(v3));
-        RRD.setPower(powerScale(v4));
-    }
-
     /**Scale input to a modified sigmoid curve
      *
      * @param power is a double input from the mecanum method
@@ -236,8 +200,8 @@ public class robotBase {
 
         //modify to sigmoid
         //delivers 0 power at 0, and 1 power at 1, varies in between
-        power = (1.2/(1 + Math.pow(Math.E, -10*(power-.5))))-.01;
-        //graph here -> https://www.desmos.com/calculator/mmmnuoh9qm
+        power = (.8/(1 + Math.pow(Math.E, -12*(power-.5))));
+        //graph here -> https://www.desmos.com/calculator/tpdxkzhned
 
 
         //Make sure value falls between -1 and 1
@@ -310,18 +274,19 @@ public class robotBase {
      * @param curPos the encoder's current value
      * @param endPos the encoder's desired ending value
      * @param beginSpeed Desired beginning speed
-     * @param endSPeed Desired ending speed
+     * @param endSpeed Desired ending speed
      * @return modified value for encoder ramp
      *
      * @TODO design algorithm
      */
-    public static double powerRamp(double beginPos, double curPos, double endPos, double beginSpeed, double speedEnd){
+    public static double powerRamp(double beginPos, double curPos, double endPos, double beginSpeed, double endSpeed){
 
         double pct = (curPos/(endPos-beginPos)); //0 to 1 of how far along the path in that axis the robot is
+        double speed = 0.0;
 
         //Speed manipulation algorithm
 
-        return speedMax;
+        return speed;
     }
 
     /**Turn towards a given heading (deg)
