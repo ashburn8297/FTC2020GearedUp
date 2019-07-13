@@ -17,6 +17,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
+import static android.os.SystemClock.sleep;
+
+
 public class robotBase {
 
     /*Public hardware members*/
@@ -228,8 +231,6 @@ public class robotBase {
      */
     public void translate(double xInches, double yInches, double timeout, double speedBegin, double endingSpeed, LinearOpMode opMode, Telemetry t){
         //Create a local timer
-        ElapsedTime period  = new ElapsedTime();
-
         resetEncoders();
         runUsingEncoders();
 
@@ -302,44 +303,61 @@ public class robotBase {
      */
     public void turn(double targetAngle, double speed, double timeout, boolean fullStop, LinearOpMode opMode, Telemetry t) {
         //Create a local timer
-        ElapsedTime period = new ElapsedTime();
-        double  error;
-        double  steer;
+        period.reset();
 
-        //Coefficient of turn
-        double  PCoeff = .5;
+        double error = 0.0;
+        double steer = 0.0;
+
+        double P_COEFF = .1;
+
+        boolean notDone = true;
+
         runUsingEncoders();
 
+        /** @TODO Use field centeric angles*/
+        //Needs to know offset from previous turn
+        //Needs to be able to wrap around and issue shortest turn
+
+
         //While active and within timeout
-        while(opMode.opModeIsActive() && (period.seconds() < timeout)){
+        while(opMode.opModeIsActive() && (period.seconds() < timeout) && (Math.abs(targetAngle - modernRoboticsI2cGyro.getIntegratedZValue())>HEADING_THRESHOLD)){
             //Pull the robot's current heading
-            double CurAngle = gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+            error = getError(targetAngle);
 
-            //Find the error
-            error = targetAngle - CurAngle;
-
-            //If within threshold, stop.
             if (Math.abs(error) <= HEADING_THRESHOLD) {
+                steer = 0.0;
                 brake();
             }
-
-            //Else use coeff to steer and set power.
             else {
-                steer = Range.clip(error * PCoeff, -1, 1);
-                speed  = speed * steer;
-                mecanum(0.0, 0.0, speed);
+                steer = getSteer(error, P_COEFF);
+                mecanum(0.0,0.0, steer);
             }
 
-            t.addData("Current Angle", gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
+            t.addData("Current Angle", modernRoboticsI2cGyro.getIntegratedZValue());
             t.addData("Target Angle", targetAngle);
             t.addData("Time","%.1f", period.seconds());
             t.update();
             opMode.idle();
         }
+        sleep(250);
         if(fullStop == true) {
             brake();
         }
 
+    }
+
+    public double getError(double targetAngle) {
+        double robotError;
+
+        // calculate error in -179 to +180 range  (
+        robotError = targetAngle - modernRoboticsI2cGyro.getIntegratedZValue();
+        while (robotError > 180)  robotError -= 360;
+        while (robotError <= -180) robotError += 360;
+        return robotError;
+    }
+
+    public double getSteer(double error, double PCoeff) {
+        return Range.clip(error * PCoeff, -1, 1);
     }
 
     public double getBatteryVoltage() {
