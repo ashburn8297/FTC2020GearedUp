@@ -305,12 +305,10 @@ public class robotBase {
         //Create a local timer
         period.reset();
 
-        double error = 0.0;
-        double steer = 0.0;
+        double error;
+        double steer;
 
         double P_COEFF = .1;
-
-        boolean notDone = true;
 
         runUsingEncoders();
 
@@ -321,17 +319,9 @@ public class robotBase {
 
         //While active and within timeout
         while(opMode.opModeIsActive() && (period.seconds() < timeout) && (Math.abs(targetAngle - modernRoboticsI2cGyro.getIntegratedZValue())>HEADING_THRESHOLD)){
-            //Pull the robot's current heading
-            error = getError(targetAngle);
 
-            if (Math.abs(error) <= HEADING_THRESHOLD) {
-                steer = 0.0;
-                brake();
-            }
-            else {
-                steer = getSteer(error, P_COEFF);
-                mecanum(0.0,0.0, steer);
-            }
+            //algorithm here
+            
 
             t.addData("Current Angle", modernRoboticsI2cGyro.getIntegratedZValue());
             t.addData("Target Angle", targetAngle);
@@ -346,19 +336,6 @@ public class robotBase {
 
     }
 
-    public double getError(double targetAngle) {
-        double robotError;
-
-        // calculate error in -179 to +180 range  (
-        robotError = targetAngle - modernRoboticsI2cGyro.getIntegratedZValue();
-        while (robotError > 180)  robotError -= 360;
-        while (robotError <= -180) robotError += 360;
-        return robotError;
-    }
-
-    public double getSteer(double error, double PCoeff) {
-        return Range.clip(error * PCoeff, -1, 1);
-    }
 
     public double getBatteryVoltage() {
         double result = Double.POSITIVE_INFINITY;
