@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="Strafe Test")
+@Autonomous(name="Gyro Test")
 public class auto extends LinearOpMode {
     robotBase robot       = new robotBase();
     ElapsedTime runtime   = new ElapsedTime();
@@ -45,10 +45,14 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        robot.turn(90, .5, 10, true, auto.this, telemetry);
-        sleep(1000);
+        robot.turn(90, 1, 5.0, true, auto.this, telemetry);
+        sleep(2000);
+        robot.turn(180, 1, 5.0, true, auto.this, telemetry);
+        sleep(2000);
+        robot.turn(-90, 1, 5.0, true, auto.this, telemetry);
+        sleep(2000);
+        robot.turn(90, 1, 5.0, true, auto.this, telemetry);
 
         stop();
-
     }
 }
