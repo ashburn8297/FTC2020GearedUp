@@ -338,9 +338,17 @@ public class robotBase {
                 neg = 1;
             }
 
-            //algorithm here
+            //algorithm here  @ https://www.desmos.com/calculator/zdrnboenxp
+
+            //Will need revison with navX gyro
             double pct = 1 + ((c - d) / d);
-            error = Math.tanh(-2 * (pct - .1)) + 1.3;
+            if(d > 30)
+                if(pct <= .95)
+                    error = Math.tanh(-2 * (pct - .1)) + 1.25;
+                else
+                    error = (-4*pct) + 4.1;
+            else
+                error = Math.tanh(-2 * (pct + .2)) + 1.05;
 
             //Modify speed with variable 'speed'
             steer = error * coeff * neg;
