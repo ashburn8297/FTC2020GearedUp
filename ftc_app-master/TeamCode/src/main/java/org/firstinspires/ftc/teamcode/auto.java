@@ -4,13 +4,13 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="Gyro Test")
+@Autonomous(name = "Gyro Test")
 public class auto extends LinearOpMode {
-    robotBase robot       = new robotBase();
-    ElapsedTime runtime   = new ElapsedTime();
+    robotBase robot = new robotBase();
+    ElapsedTime runtime = new ElapsedTime();
 
     @Override
-    public void runOpMode(){
+    public void runOpMode() {
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
@@ -30,8 +30,8 @@ public class auto extends LinearOpMode {
             sleep(50);
         }*/
 
-        while (!isStopRequested() && robot.modernRoboticsI2cGyro.isCalibrating())  {
-            telemetry.addData("Calibrating MR", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
+        while (!isStopRequested() && robot.modernRoboticsI2cGyro.isCalibrating()) {
+            telemetry.addData("Calibrating MR", "%s", Math.round(runtime.seconds()) % 2 == 0 ? "|.." : "..|");
             telemetry.update();
             sleep(50);
         }
