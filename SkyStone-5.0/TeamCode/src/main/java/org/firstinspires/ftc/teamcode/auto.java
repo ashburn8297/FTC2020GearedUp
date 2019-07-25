@@ -42,6 +42,7 @@ public class auto extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
+        robot.modernRoboticsI2cGyro.resetZAxisIntegrator();
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
@@ -56,7 +57,8 @@ public class auto extends LinearOpMode {
         robot.turn(-90, 1, 5.0, true, auto.this, telemetry);
         sleep(500);
         robot.turn(-75, 1, 5.0, true, auto.this, telemetry);
-
+        sleep(500);
         stop();
+
     }
 }

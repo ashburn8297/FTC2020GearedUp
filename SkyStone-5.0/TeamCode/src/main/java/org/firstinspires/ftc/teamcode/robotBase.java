@@ -340,16 +340,17 @@ public class robotBase {
 
             //algorithm here  @ https://www.desmos.com/calculator/zdrnboenxp
 
-            //Will need revison with navX gyro
+            //Will need revision with navX gyro
             double pct = 1 + ((c - d) / d);
             if(d > 30)
                 if(pct <= .95)
-                    error = Math.tanh(-2 * (pct - .1)) + 1.25;
+                    error = Math.tanh(-2 * (pct - .1)) + 1.1;
                 else
                     error = (-4*pct) + 4.1;
             else
                 error = Math.tanh(-2 * (pct + .2)) + 1.05;
-
+            //IS ALWAYS OVER/UNDER THE DESIRED ANGLE, COULD BE CODE PROBLEM OR COULD BE GYROSCOPE PROBLEM, IDK
+            
             //Modify speed with variable 'speed'
             steer = error * coeff * neg;
 
