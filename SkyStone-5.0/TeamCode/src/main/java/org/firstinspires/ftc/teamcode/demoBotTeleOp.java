@@ -1,9 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-//geet test
+@Disabled
 @TeleOp(name="Demo Bot") //tam
 public class demoBotTeleOp extends OpMode {
     public DcMotor LD                  = null; //Front Left Drive Motor, "FLD"

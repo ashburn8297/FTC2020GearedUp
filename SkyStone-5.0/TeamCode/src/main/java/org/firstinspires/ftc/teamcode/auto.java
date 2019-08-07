@@ -48,16 +48,6 @@ public class auto extends LinearOpMode {
 
         robot.turn(90, 1, 5.0, true, auto.this, telemetry);
         sleep(500);
-        robot.turn(30, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
-        robot.turn(0, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
-        robot.turn(-10, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
-        robot.turn(-90, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
-        robot.turn(-75, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
         stop();
 
     }
