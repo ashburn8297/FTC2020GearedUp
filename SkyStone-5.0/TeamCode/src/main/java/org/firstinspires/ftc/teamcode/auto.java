@@ -25,24 +25,17 @@ public class auto extends LinearOpMode {
         //calibrate gyro
         runtime.reset();
 
-        /*while (!isStopRequested() && robot.navxMicro.isCalibrating())  {
+        while (!isStopRequested() && robot.navxMicro.isCalibrating())  {
             telemetry.addData("Calibrating NavX", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
             telemetry.update();
             sleep(50);
-        }*/
-        while (!isStopRequested() && robot.modernRoboticsI2cGyro.isCalibrating()) {
-            telemetry.addData("Calibrating MR", "%s", Math.round(runtime.seconds()) % 2 == 0 ? "|.." : "..|");
-            telemetry.update();
-            sleep(50);
         }
-        robot.modernRoboticsI2cGyro.resetZAxisIntegrator();
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Ready");
         telemetry.update();
 
         waitForStart();
-        robot.modernRoboticsI2cGyro.resetZAxisIntegrator();
         //------------------------------------------------------------------------------------------
         runtime.reset();
 

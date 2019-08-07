@@ -34,9 +34,6 @@ public class robotBase {
     IntegratingGyroscope gyroNV;                //For polymorphism
     NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope, "navx" on phones
 
-    IntegratingGyroscope gyroMR;
-    ModernRoboticsI2cGyro modernRoboticsI2cGyro;    //"gyro" on phones
-
     AnalogInput odometryL; //"odometryL"
     AnalogInput odometryR; //"odometryR"
 
@@ -96,16 +93,15 @@ public class robotBase {
         odometryL = hwMap.get(AnalogInput.class, "odometryL");
         odometryR = hwMap.get(AnalogInput.class, "odometryR");
 
-        if(gyroOn) {
-            //Configure the NavXMicro for use
-            navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx"); //Used for auto
-            gyroNV = navxMicro;
-            t.addData("gyroNV", "ONLINE");
 
-            //Configure MR Gyro for use
-            modernRoboticsI2cGyro = hwMap.get(ModernRoboticsI2cGyro.class, "gyro"); //Used for teleOp
-            gyroMR = modernRoboticsI2cGyro;
-            t.addData("gyroMR", "ONLINE");
+        if(gyroOn) {
+
+
+            //Configure the NavXMicro for use
+            //navxMicro = hwMap.get(IntegratingGyroscope.class, "navx"); //Used for auto
+            gyroNV = hwMap.get(IntegratingGyroscope.class, "navx"); //Used for auto
+            //gyroNV = navxMicro;
+            t.addData("gyroNV", "ONLINE");
             t.update();
         }
     }
@@ -334,12 +330,12 @@ public class robotBase {
         else if (deltaHeading >= 180)
             deltaHeading -= 360;
         //deltaHeading is now the relative turning vector
-        modernRoboticsI2cGyro.resetZAxisIntegrator();
+        //gyroNV.
 
         //While active and within timeout
         while (opMode.opModeIsActive() && (period.seconds() < timeout) && (found == false)) {
 
-            cycleHeading = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+            cycleHeading = gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
             double c = Math.abs(cycleHeading);
             double d = Math.abs(deltaHeading);
@@ -385,24 +381,6 @@ public class robotBase {
             brake();
         }
     }
-
-    public void gyroData(double timeout, LinearOpMode opMode, Telemetry t) {
-        period.reset(); //Start the clock
-        while (period.seconds() < timeout && opMode.opModeIsActive()) {
-
-            int heading = modernRoboticsI2cGyro.getHeading();
-            int integratedZ = modernRoboticsI2cGyro.getIntegratedZValue();
-            float zAngle = gyroMR.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
-
-            t.addData("Heading", heading);
-            t.addData("Integrated Z", integratedZ);
-            t.addData("Z Angle", zAngle);
-            t.addData("Time", "%.1f", period.seconds());
-            t.update();
-            opMode.idle();
-        }
-    }
-
 
     public double getBatteryVoltage() {
         double result = Double.POSITIVE_INFINITY;
