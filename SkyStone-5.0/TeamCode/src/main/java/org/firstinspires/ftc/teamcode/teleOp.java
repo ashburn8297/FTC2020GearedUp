@@ -11,30 +11,25 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import static android.os.SystemClock.sleep;
 
 
-@TeleOp(name = "Mecanum Test")
+@TeleOp(name = "Mecanum")
 public class teleOp extends OpMode {
     robotBase robot = new robotBase();
     ElapsedTime runtime = new ElapsedTime();
 
-    private double headingResetPressed = 0.0; //How long ago was the heading reset?
+    private double boost = 1.0;
 
     public void init() {
         /*
          * Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
-        robot.init(hardwareMap, telemetry);
-        sleep(500);
+        robot.init(hardwareMap, telemetry, false);
+        sleep(100);
+
         //Start the robot at zero power, using encoders, and float zero power
         robot.brake();
         robot.runUsingEncoders();
         robot.baseBrake();
-
-        while (robot.modernRoboticsI2cGyro.isCalibrating()) {
-            telemetry.addData("Calibrating", "%s", Math.round(runtime.seconds()) % 2 == 0 ? "|.." : "..|");
-            telemetry.update();
-            sleep(50);
-        }
 
         // Send telemetry message to signify robot waiting
         telemetry.addData("Status", "Ready");
@@ -53,9 +48,20 @@ public class teleOp extends OpMode {
     @Override
     public void loop() {
 
-        robot.mecanum(gamepad1.left_stick_x, -gamepad1.left_stick_y, gamepad1.right_stick_x);
+        if(gamepad1.right_trigger > .05) {
+            boost = 1 + (gamepad1.right_trigger * .75);
+        }
+        else{
+            boost = 1.0;
+        }
+
+        robot.mecanum(gamepad1.left_stick_x * boost, -gamepad1.left_stick_y * boost, gamepad1.right_stick_x);
 
         //------------------------------------------------------------------------------------------
+
+        telemetry.addData("Left", robot.odometryL.getVoltage());
+        telemetry.addData("Right", robot.odometryR.getVoltage());
+
         telemetry.addData("Time", Math.round(runtime.seconds()));
         telemetry.addLine("Left Joystick |")
                 .addData(" x", "%.2f", gamepad1.left_stick_x)

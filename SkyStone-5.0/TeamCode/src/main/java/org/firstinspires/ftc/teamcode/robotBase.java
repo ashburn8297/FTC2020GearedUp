@@ -3,6 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.AnalogInputController;
+import com.qualcomm.robotcore.hardware.AnalogSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IntegratingGyroscope;
@@ -34,6 +37,10 @@ public class robotBase {
     IntegratingGyroscope gyroMR;
     ModernRoboticsI2cGyro modernRoboticsI2cGyro;    //"gyro" on phones
 
+    AnalogInput odometryL; //"odometryL"
+    AnalogInput odometryR; //"odometryR"
+
+
     public static final int REV_Planetary_Ticks_Per_Rev = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
     public static final double wheel_diameter = 4.0; //Diameter of wheel, likely dead wheel
     public static final double drive_reduction = 1.0; //This is < 1.0 if Geared UP
@@ -56,7 +63,7 @@ public class robotBase {
     }
 
     /* Initialize standard Hardware interfaces */
-    public void init(HardwareMap ahwMap, Telemetry t) {
+    public void init(HardwareMap ahwMap, Telemetry t, boolean gyroOn) {
         hwMap = ahwMap;
 
         //Initialize the four drive base motors
@@ -86,16 +93,21 @@ public class robotBase {
          * https://pdocs.kauailabs.com/navx-micro/guidance/gyroaccelerometer-calibration/
          * */
 
-        //Configure the NavXMicro for use
-        navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx"); //Used for auto
-        gyroNV = navxMicro;
-        t.addData("gyroNV", "ONLINE");
+        odometryL = hwMap.get(AnalogInput.class, "odometryL");
+        odometryR = hwMap.get(AnalogInput.class, "odometryR");
 
-        //Configure MR Gyro for use
-        modernRoboticsI2cGyro = hwMap.get(ModernRoboticsI2cGyro.class, "gyro"); //Used for teleOp
-        gyroMR = modernRoboticsI2cGyro;
-        t.addData("gyroMR", "ONLINE");
-        t.update();
+        if(gyroOn) {
+            //Configure the NavXMicro for use
+            navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx"); //Used for auto
+            gyroNV = navxMicro;
+            t.addData("gyroNV", "ONLINE");
+
+            //Configure MR Gyro for use
+            modernRoboticsI2cGyro = hwMap.get(ModernRoboticsI2cGyro.class, "gyro"); //Used for teleOp
+            gyroMR = modernRoboticsI2cGyro;
+            t.addData("gyroMR", "ONLINE");
+            t.update();
+        }
     }
 
 
