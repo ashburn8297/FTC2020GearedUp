@@ -32,6 +32,7 @@ package org.firstinspires.ftc.robotcontroller.external.samples;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.OpticalDistanceSensor;
 
 /*
@@ -53,7 +54,6 @@ public class SensorMROpticalDistance extends LinearOpMode {
 
     // get a reference to our Light Sensor object.
     odsSensor = hardwareMap.get(OpticalDistanceSensor.class, "sensor_ods");
-
     // wait for the start button to be pressed.
     waitForStart();
 
@@ -64,6 +64,7 @@ public class SensorMROpticalDistance extends LinearOpMode {
       // send the info back to driver station using telemetry function.
       telemetry.addData("Raw",    odsSensor.getRawLightDetected());
       telemetry.addData("Normal", odsSensor.getLightDetected());
+
 
       telemetry.update();
     }
