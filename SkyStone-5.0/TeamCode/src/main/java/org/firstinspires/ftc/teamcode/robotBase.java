@@ -43,7 +43,7 @@ public class robotBase {
     public static final double drive_reduction = 1.0; //This is < 1.0 if Geared UP
     public static final double ticks_per_inch = (REV_Planetary_Ticks_Per_Rev * drive_reduction) / (wheel_diameter * Math.PI);
 
-    public static final double HEADING_THRESHOLD = 1;
+    public static final double HEADING_THRESHOLD = .25;
     public double prev_heading = 0;
 
     public static final String VUFORIA_KEY = "AbEDH9P/////AAABmcFPgUDLz0tMh55QD8t9w6Bqxt3h/G+JEMdItgpjoR+S1FFRIeF/w2z5K7r/nUzRZKleksLHPglkfMKX0NltxxpVUpXqj+w6sGvedaNq449JZbEQxaYe4SU+3NNi0LBN879h9LZW9RxJFOMt7HfgssnBdg+3IsiwVKKYnovU+99oz3gJkcOtYhUS9ku3s0Wz2n6pOu3znT3bICiR0/480N63FS7d6Mk6sqN7mNyxVcRf8D5mqIMKVNGAjni9nSYensl8GAJWS1vYfZ5aQhXKs9BPM6mST5qf58Tg4xWoHltcyPp0x33tgQHBbcel0M9pYe/7ub1pmzvxeBqVgcztmzC7uHnosDO3/2MAMah8qijd";
@@ -98,9 +98,8 @@ public class robotBase {
 
 
             //Configure the NavXMicro for use
-            //navxMicro = hwMap.get(IntegratingGyroscope.class, "navx"); //Used for auto
-            gyroNV = hwMap.get(IntegratingGyroscope.class, "navx"); //Used for auto
-            //gyroNV = navxMicro;
+            navxMicro = hwMap.get(NavxMicroNavigationSensor.class, "navx"); //Used for auto
+            gyroNV = navxMicro;
             t.addData("gyroNV", "ONLINE");
             t.update();
         }
@@ -330,35 +329,29 @@ public class robotBase {
         else if (deltaHeading >= 180)
             deltaHeading -= 360;
         //deltaHeading is now the relative turning vector
-        //gyroNV.
+
 
         //While active and within timeout
         while (opMode.opModeIsActive() && (period.seconds() < timeout) && (found == false)) {
 
-            cycleHeading = gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+            cycleHeading = gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle - prev_heading;
 
             double c = Math.abs(cycleHeading);
             double d = Math.abs(deltaHeading);
 
             if (deltaHeading < cycleHeading) {
-                neg = -1;
-            } else {
                 neg = 1;
+            } else {
+                neg = -1;
             }
 
-            //algorithm here  @ https://www.desmos.com/calculator/zdrnboenxp
+            //algorithm here  @ https://www.desmos.com/calculator/3kvxd4rkef
 
             //Will need revision with navX gyro
             double pct = 1 + ((c - d) / d);
-            if(d > 30)
-                if(pct <= .95)
-                    error = Math.tanh(-2 * (pct - .1)) + 1.1;
-                else
-                    error = (-4*pct) + 4.1;
-            else
-                error = Math.tanh(-2 * (pct + .2)) + 1.05;
-            //IS ALWAYS OVER/UNDER THE DESIRED ANGLE, COULD BE CODE PROBLEM OR COULD BE GYROSCOPE PROBLEM, IDK
-            
+
+            error = .35;
+
             //Modify speed with variable 'speed'
             steer = error * coeff * neg;
 
@@ -372,6 +365,7 @@ public class robotBase {
             t.addData("Current Angle", cycleHeading);
             t.addData("Target Angle", deltaHeading);
             t.addData("Time", "%.1f", period.seconds());
+            t.addData("Angle", gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
             t.update();
             opMode.idle();
         }
@@ -391,5 +385,32 @@ public class robotBase {
             }
         }
         return Math.round(result * 100) / 100;
+    }
+
+    public void countDegrees(LinearOpMode opMode, Telemetry t){
+        period.reset();
+        double wrapTimeout = .25;
+        double prevWrap = -1.0;
+
+        int wrap = 0;
+        boolean skip = true;
+
+
+        final double initVL = odometryL.getVoltage();
+
+        while(opMode.opModeIsActive() && Math.abs(wrap)<5){
+            mecanum(0.0, 0.6, 0.0);
+            double VL = odometryL.getVoltage();
+            if(initVL + .005 > VL && VL > initVL - .005 && (prevWrap + wrapTimeout) < period.seconds()){
+                if(skip == false){
+                    wrap++;
+                    prevWrap = period.seconds();
+                }
+                else{
+                    skip = false;
+                }
+            }
+
+        }
     }
 }

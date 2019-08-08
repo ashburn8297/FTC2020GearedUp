@@ -25,7 +25,7 @@ public class auto extends LinearOpMode {
         //calibrate gyro
         runtime.reset();
 
-        while (!isStopRequested() && robot.navxMicro.isCalibrating())  {
+        while (!isStopRequested() && robot.navxMicro.isCalibrating() && opModeIsActive())  {
             telemetry.addData("Calibrating NavX", "%s", Math.round(runtime.seconds())%2==0 ? "|.." : "..|");
             telemetry.update();
             sleep(50);
@@ -39,8 +39,19 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
+        /*robot.turn(30, 1, 5.0, true, auto.this, telemetry);
+        sleep(500);
+        robot.turn(60, 1, 5.0, true, auto.this, telemetry);
+        sleep(500);
+        robot.turn(0, 1, 5.0, true, auto.this, telemetry);
+        sleep(500);
         robot.turn(90, 1, 5.0, true, auto.this, telemetry);
         sleep(500);
+        robot.turn(0, 1, 5.0, true, auto.this, telemetry);
+        sleep(500);*/
+
+        robot.countDegrees(auto.this, telemetry);
+
         stop();
 
     }
