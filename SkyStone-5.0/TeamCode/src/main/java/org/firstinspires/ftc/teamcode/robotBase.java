@@ -387,30 +387,16 @@ public class robotBase {
         return Math.round(result * 100) / 100;
     }
 
-    public void countDegrees(LinearOpMode opMode, Telemetry t){
-        period.reset();
-        double wrapTimeout = .25;
-        double prevWrap = -1.0;
+    //https://acmerobotics.github.io/ftc-dashboard/gettingstarted
 
-        int wrap = 0;
-        boolean skip = true;
+    //In dev
+    /*public void countDegrees(LinearOpMode opMode, Telemetry t) {
 
+        while (opMode.opModeIsActive()) {
 
-        final double initVL = odometryL.getVoltage();
-
-        while(opMode.opModeIsActive() && Math.abs(wrap)<5){
-            mecanum(0.0, 0.6, 0.0);
-            double VL = odometryL.getVoltage();
-            if(initVL + .005 > VL && VL > initVL - .005 && (prevWrap + wrapTimeout) < period.seconds()){
-                if(skip == false){
-                    wrap++;
-                    prevWrap = period.seconds();
-                }
-                else{
-                    skip = false;
-                }
-            }
-
+            //distance -> rotations -> degrees
         }
-    }
+    }*/
+
+
 }

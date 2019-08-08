@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name = "Gyro Test")
+@Autonomous(name = "Test")
 public class auto extends LinearOpMode {
     robotBase robot = new robotBase();
     ElapsedTime runtime = new ElapsedTime();
