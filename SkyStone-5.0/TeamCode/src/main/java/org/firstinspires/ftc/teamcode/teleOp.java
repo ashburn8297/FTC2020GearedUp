@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -16,6 +18,9 @@ public class teleOp extends OpMode {
     robotBase robot = new robotBase();
     ElapsedTime runtime = new ElapsedTime();
 
+    FtcDashboard dashboard = FtcDashboard.getInstance();
+    TelemetryPacket packet = new TelemetryPacket();
+
     private double boost = 1.0;
 
     public void init() {
@@ -25,6 +30,8 @@ public class teleOp extends OpMode {
          */
         robot.init(hardwareMap, telemetry, false);
         sleep(100);
+
+
 
         //Start the robot at zero power, using encoders, and float zero power
         robot.brake();

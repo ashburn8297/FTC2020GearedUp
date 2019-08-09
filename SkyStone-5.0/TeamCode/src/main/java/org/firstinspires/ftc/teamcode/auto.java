@@ -1,14 +1,23 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.PIDCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+@Config
 @Autonomous(name = "Test")
 public class auto extends LinearOpMode {
     robotBase robot = new robotBase();
     ElapsedTime runtime = new ElapsedTime();
-
+    public static int distance = 20;
+    public static int angle = 90;
+    public static double c = .3;
     @Override
     public void runOpMode() {
         /* Initialize the hardware variables.
@@ -39,18 +48,9 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        /*robot.turn(30, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
-        robot.turn(60, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
-        robot.turn(0, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
-        robot.turn(90, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);
-        robot.turn(0, 1, 5.0, true, auto.this, telemetry);
-        sleep(500);*/
+        //robot.countDegrees(auto.this, telemetry, distance);
 
-        robot.countDegrees(auto.this, telemetry);
+        robot.turn(angle, c, 5.0, true, auto.this, telemetry);
 
         stop();
 

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -312,6 +314,9 @@ public class robotBase {
         //Create a local timer
         period.reset();
 
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        TelemetryPacket packet = new TelemetryPacket();
+
         boolean found = false;
 
         double cycleHeading;
@@ -345,12 +350,12 @@ public class robotBase {
                 neg = -1;
             }
 
-            //algorithm here  @ https://www.desmos.com/calculator/3kvxd4rkef
+            //algorithm here  @ https://www.desmos.com/calculator/b5sdz4yzhk
 
             //Will need revision with navX gyro
             double pct = 1 + ((c - d) / d);
 
-            error = .35;
+            error = 1;
 
             //Modify speed with variable 'speed'
             steer = error * coeff * neg;
@@ -362,15 +367,14 @@ public class robotBase {
                 found = true;
             }
 
-            t.addData("Current Angle", cycleHeading);
-            t.addData("Target Angle", deltaHeading);
-            t.addData("Time", "%.1f", period.seconds());
-            t.addData("Angle", gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
-            t.update();
+            packet.put("Scaled Angle", cycleHeading);
+            packet.put("Angle", gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
+            dashboard.sendTelemetryPacket(packet);
+
             opMode.idle();
         }
         sleep(250);
-        prev_heading = targetAngle;
+        prev_heading = gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
         if (fullStop == true) {
             brake();
         }
@@ -390,13 +394,53 @@ public class robotBase {
     //https://acmerobotics.github.io/ftc-dashboard/gettingstarted
 
     //In dev
-    /*public void countDegrees(LinearOpMode opMode, Telemetry t) {
+    public void countDegrees(LinearOpMode opMode, Telemetry t, double distance) {
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        TelemetryPacket packet = new TelemetryPacket();
 
-        while (opMode.opModeIsActive()) {
+        int numOfWraps = (int) (distance / 3.938);
+        double wrap = 0.0;
+        double dir = 1;
 
-            //distance -> rotations -> degrees
+        boolean moved = false;
+
+        double VL = 0.0;
+        double initVL = odometryL.getVoltage();
+
+        if(distance > 0){
+            dir = 1;
         }
-    }*/
+        else{
+            dir = -1;
+        }
 
+        while (opMode.opModeIsActive() && Math.abs(wrap) < Math.abs(numOfWraps) && !opMode.isStopRequested()) {
 
+            mecanum(0, .55 * dir, 0);
+
+            VL = odometryL.getVoltage();
+            VL =  Math.floor((VL)*1000)/1000;
+
+            if(initVL + .2 > VL && VL > initVL - .2 && moved == true){
+                if(numOfWraps > 0){
+                    wrap++;
+                }
+                else {
+                    wrap--;
+                }
+                moved = false;
+            }
+
+            if(moved == false && Math.abs(initVL-VL) > .5){
+                moved = true;
+            }
+
+            packet.put("Distance", wrap);
+            dashboard.sendTelemetryPacket(packet);
+            opMode.idle();
+        }
+        baseBrake();
+        brake();
+        sleep(2000);
+    }
 }
