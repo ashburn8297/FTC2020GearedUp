@@ -65,16 +65,6 @@ public class teleOp extends OpMode {
         robot.mecanum(gamepad1.left_stick_x * boost, -gamepad1.left_stick_y * boost, gamepad1.right_stick_x);
 
         //------------------------------------------------------------------------------------------
-
-        telemetry.addData("Left", robot.odometryL.getVoltage());
-        telemetry.addData("Right", robot.odometryR.getVoltage());
-
-        telemetry.addData("Time", Math.round(runtime.seconds()));
-        telemetry.addLine("Left Joystick |")
-                .addData(" x", "%.2f", gamepad1.left_stick_x)
-                .addData("y", "%.2f", -gamepad1.left_stick_y);
-        telemetry.addLine("Right Joystick |")
-                .addData(" x", "%.2f", gamepad1.right_stick_x);
         telemetry.addLine("Front Motor Powers")
                 .addData(" FL", "%.2f", robot.FLD.getPower())
                 .addData("FR", "%.2f", robot.FRD.getPower());

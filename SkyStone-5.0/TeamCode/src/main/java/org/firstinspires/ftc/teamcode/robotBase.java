@@ -400,6 +400,10 @@ public class robotBase {
 
         int numOfWraps = (int) (distance / 3.938);
         double wrap = 0.0;
+
+        int deg = (int) (distance % 3.938);
+        double rot = 0.0;
+        
         double dir = 1;
 
         boolean moved = false;
