@@ -350,13 +350,16 @@ public class robotBase {
                 neg = -1;
             }
 
-            //algorithm here  @ https://www.desmos.com/calculator/b5sdz4yzhk
+            //algorithm here  @ https://www.desmos.com/calculator/thgycpx0n9
 
             //Will need revision with navX gyro
             double pct = 1 + ((c - d) / d);
 
-            error = 1;
-
+            if (pct < 1) {
+                error = .55 * Math.pow(2, (-pct));
+            } else {
+                error = .55 * Math.pow(2, (pct - 2));
+            }
             //Modify speed with variable 'speed'
             steer = error * coeff * neg;
 
@@ -364,19 +367,24 @@ public class robotBase {
 
             //Terminating condition
             if (Math.abs(cycleHeading - deltaHeading) < HEADING_THRESHOLD) {
+                baseBrake();
                 found = true;
+                if (fullStop == true) {
+                    brake();
+                }
             }
 
             packet.put("Scaled Angle", cycleHeading);
+            packet.put("Power", error * 100 * neg);
             packet.put("Angle", gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
             dashboard.sendTelemetryPacket(packet);
 
             opMode.idle();
         }
-        sleep(250);
         prev_heading = gyroNV.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
         if (fullStop == true) {
             brake();
+            sleep(250);
         }
     }
 
@@ -398,18 +406,21 @@ public class robotBase {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         TelemetryPacket packet = new TelemetryPacket();
 
-        int numOfWraps = (int) (distance / 3.938);
-        double wrap = 0.0;
-
-        int deg = (int) (distance % 3.938);
-        double rot = 0.0;
-        
         double dir = 1;
 
         boolean moved = false;
+        boolean finalMove = false;
 
         double VL = 0.0;
         double initVL = odometryL.getVoltage();
+
+        int numOfWraps = (int) (distance / 3.938);
+        double wrap = 0.0;
+
+        int deg = (int) (distance % 3.938)/360;
+        deg = deg * (int) (3.3/360);
+        double vFinal = (initVL + deg) % 3.3;
+        double rot = 0.0;
 
         if(distance > 0){
             dir = 1;
@@ -418,33 +429,48 @@ public class robotBase {
             dir = -1;
         }
 
-        while (opMode.opModeIsActive() && Math.abs(wrap) < Math.abs(numOfWraps) && !opMode.isStopRequested()) {
+        while (opMode.opModeIsActive() && Math.abs(wrap) < Math.abs(numOfWraps)  && finalMove == false&& !opMode.isStopRequested()) {
 
-            mecanum(0, .55 * dir, 0);
+            if(Math.abs(wrap) < Math.abs(numOfWraps)){
+                mecanum(0, .5 * dir, 0);
 
-            VL = odometryL.getVoltage();
-            VL =  Math.floor((VL)*1000)/1000;
+                VL = odometryL.getVoltage();
+                VL =  Math.floor((VL)*1000)/1000;
 
-            if(initVL + .2 > VL && VL > initVL - .2 && moved == true){
-                if(numOfWraps > 0){
-                    wrap++;
+                if(initVL + .2 > VL && VL > initVL - .2 && moved == true){
+                    if(numOfWraps > 0){
+                        wrap++;
+                    }
+                    else {
+                        wrap--;
+                    }
+                    moved = false;
                 }
-                else {
-                    wrap--;
+
+                if(moved == false && Math.abs(initVL-VL) > .5){
+                    moved = true;
                 }
-                moved = false;
+            }
+            else{
+                mecanum(0, .2 * dir, 0);
+
+                VL = odometryL.getVoltage();
+                VL =  Math.floor((VL)*1000)/1000;
+
+                if(VL + .05 > vFinal || vFinal > VL - .05){
+                    baseBrake();
+                    brake();
+                    sleep(2000);
+                    finalMove = true;
+                }
             }
 
-            if(moved == false && Math.abs(initVL-VL) > .5){
-                moved = true;
-            }
 
-            packet.put("Distance", wrap);
+            packet.put("Distance", wrap * 3.938);
+            packet.put("Voltage", VL);
+            packet.put("fV", vFinal);
             dashboard.sendTelemetryPacket(packet);
             opMode.idle();
         }
-        baseBrake();
-        brake();
-        sleep(2000);
     }
 }

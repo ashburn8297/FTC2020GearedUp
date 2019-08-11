@@ -15,9 +15,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class auto extends LinearOpMode {
     robotBase robot = new robotBase();
     ElapsedTime runtime = new ElapsedTime();
-    public static int distance = 20;
-    public static int angle = 90;
-    public static double c = .3;
+    public static double c = 1.0;
+    public static double distance = 40;
     @Override
     public void runOpMode() {
         /* Initialize the hardware variables.
@@ -48,9 +47,11 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        //robot.countDegrees(auto.this, telemetry, distance);
+        robot.countDegrees(auto.this, telemetry, distance);
 
-        robot.turn(angle, c, 5.0, true, auto.this, telemetry);
+        //    robot.turn(90, c, 5.0, true, auto.this, telemetry);
+        //    robot.turn(270, c, 5.0, true, auto.this, telemetry);
+        //    robot.turn(0, c, 5.0, true, auto.this, telemetry);
 
         stop();
 
