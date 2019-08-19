@@ -39,11 +39,7 @@ public class robotBase {
     AnalogInput odometryL; //"odometryL"
     AnalogInput odometryR; //"odometryR"
 
-
-    public static final int REV_Planetary_Ticks_Per_Rev = 1220; //How many ticks to expect per one turn of the 20:1 planetary motors.
-    public static final double wheel_diameter = 4.0; //Diameter of wheel, likely dead wheel
-    public static final double drive_reduction = 1.0; //This is < 1.0 if Geared UP
-    public static final double ticks_per_inch = (REV_Planetary_Ticks_Per_Rev * drive_reduction) / (wheel_diameter * Math.PI);
+    public static final double inches_per_rotation = 3.769;
 
     public static final double HEADING_THRESHOLD = .25;
     public double prev_heading = 0;
@@ -279,26 +275,6 @@ public class robotBase {
         }
     }
 
-
-    /**
-     * @param beginPos   the robot's beginning (starting) value
-     * @param curPos     the encoder's current value
-     * @param endPos     the encoder's desired ending value
-     * @param beginSpeed Desired beginning speed
-     * @param endSpeed   Desired ending speed
-     * @return modified value for encoder ramp
-     * @TODO design algorithm
-     */
-    public static double powerRamp(double beginPos, double curPos, double endPos, double beginSpeed, double endSpeed) {
-
-        double pct = (curPos / (endPos - beginPos)); //0 to 1 of how far along the path in that axis the robot is
-        double speed = 0.0;
-
-        //Speed manipulation algorithm
-
-        return speed;
-    }
-
     /**
      * Turn towards a given heading (deg)
      *
@@ -402,7 +378,8 @@ public class robotBase {
     //https://acmerobotics.github.io/ftc-dashboard/gettingstarted
 
     //In dev
-    public void countDegrees(LinearOpMode opMode, Telemetry t, double distance) {
+    /*
+    public void odometry(LinearOpMode opMode, Telemetry t, double distance) {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         TelemetryPacket packet = new TelemetryPacket();
 
@@ -429,7 +406,7 @@ public class robotBase {
             dir = -1;
         }
 
-        while (opMode.opModeIsActive() && Math.abs(wrap) < Math.abs(numOfWraps)  && finalMove == false&& !opMode.isStopRequested()) {
+        while (opMode.opModeIsActive() && Math.abs(wrap) < Math.abs(numOfWraps)  && finalMove == false) {
 
             if(Math.abs(wrap) < Math.abs(numOfWraps)){
                 mecanum(0, .5 * dir, 0);
@@ -472,5 +449,101 @@ public class robotBase {
             dashboard.sendTelemetryPacket(packet);
             opMode.idle();
         }
+    }
+    */
+
+    public static boolean isBetween(double LB, double val, double UB){
+        if(LB < val && val < UB){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    public void odometry(LinearOpMode opMode, Telemetry t, double distance, double runtime){
+
+        period.reset();
+
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        TelemetryPacket packet = new TelemetryPacket();
+
+        double volts_per_degree = 3.3/360;
+        double high_speed_motor = .5;
+        double low_speed_motor = .2;
+
+        boolean ableToRegisterRev = false;
+
+        //2.2.
+        double degrees = (distance / inches_per_rotation) * 360;
+
+        //2.3.2., 2.3.5.
+        int full_rotations = (int) (degrees / 360); //in full revolutions
+        int rotations = 0;
+
+        int partial_rotations = (int) (degrees % 360); //in degrees
+        boolean done = false;
+
+        //2.4.2., rounded to 3 decimal places
+        double starting_voltage = Math.floor(odometryL.getVoltage()*1000)/1000;
+
+        //2.5.2., rounded to 3 decimal places
+        double ending_voltage = Math.floor(((starting_voltage + (partial_rotations * (volts_per_degree))) % 3.3) * 1000)/1000;
+
+        //3.1.2, 3.2.2.
+        double current_voltageL = 0.0;
+
+        //2.6.
+        double dir = 0;
+        if(distance > 0){
+            dir = 1;
+        }
+        else{
+            dir = -1;
+        }
+
+        //3.1.
+        while (opMode.opModeIsActive() && Math.abs(rotations) < Math.abs(full_rotations)  && period.seconds() < runtime) {
+            mecanum(0, high_speed_motor * dir, 0);
+
+            current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
+
+            if(isBetween(starting_voltage - .2, current_voltageL, starting_voltage + .2) && ableToRegisterRev == true){
+                rotations++;
+                ableToRegisterRev = false;
+            }
+
+            //has robot moved enough to register revolution
+            if(ableToRegisterRev == false && isBetween(ending_voltage - .05, current_voltageL, ending_voltage + .05)){
+                ableToRegisterRev = true;
+            }
+
+
+            packet.put("Rotations", rotations);
+            packet.put("Voltage", current_voltageL);
+            packet.put("Can add rotations", ableToRegisterRev);
+            dashboard.sendTelemetryPacket(packet);
+            opMode.idle();
+        }
+
+        //3.2.
+        while (opMode.opModeIsActive() && !done  && period.seconds() < runtime) {
+            mecanum(0, low_speed_motor * dir, 0);
+
+            current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
+
+            if(ending_voltage + .05 > current_voltageL && current_voltageL > ending_voltage - .05){
+                done = true;
+            }
+            packet.put("Voltage", current_voltageL);
+            packet.put("Ending Voltage", ending_voltage);
+            dashboard.sendTelemetryPacket(packet);
+            opMode.idle();
+        }
+
+        baseBrake();
+        brake();
+        sleep(250);
+
     }
 }
