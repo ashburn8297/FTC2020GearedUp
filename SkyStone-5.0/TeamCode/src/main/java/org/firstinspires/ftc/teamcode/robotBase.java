@@ -514,7 +514,7 @@ public class robotBase {
             }
 
             //has robot moved enough to register revolution
-            if(ableToRegisterRev == false && isBetween(ending_voltage - .05, current_voltageL, ending_voltage + .05)){
+            if(ableToRegisterRev == false && !isBetween(starting_voltage - .2, current_voltageL, starting_voltage + .2)){
                 ableToRegisterRev = true;
             }
 
