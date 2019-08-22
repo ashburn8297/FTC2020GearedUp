@@ -532,7 +532,7 @@ public class robotBase {
 
             current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
 
-            if(ending_voltage + .05 > current_voltageL && current_voltageL > ending_voltage - .05){
+            if(isBetween(ending_voltage - .05 , current_voltageL , ending_voltage + .05)){
                 done = true;
             }
             packet.put("Voltage", current_voltageL);
