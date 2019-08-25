@@ -375,83 +375,6 @@ public class robotBase {
         return Math.round(result * 100) / 100;
     }
 
-    //https://acmerobotics.github.io/ftc-dashboard/gettingstarted
-
-    //In dev
-    /*
-    public void odometry(LinearOpMode opMode, Telemetry t, double distance) {
-        FtcDashboard dashboard = FtcDashboard.getInstance();
-        TelemetryPacket packet = new TelemetryPacket();
-
-        double dir = 1;
-
-        boolean moved = false;
-        boolean finalMove = false;
-
-        double VL = 0.0;
-        double initVL = odometryL.getVoltage();
-
-        int numOfWraps = (int) (distance / 3.938);
-        double wrap = 0.0;
-
-        int deg = (int) (distance % 3.938)/360;
-        deg = deg * (int) (3.3/360);
-        double vFinal = (initVL + deg) % 3.3;
-        double rot = 0.0;
-
-        if(distance > 0){
-            dir = 1;
-        }
-        else{
-            dir = -1;
-        }
-
-        while (opMode.opModeIsActive() && Math.abs(wrap) < Math.abs(numOfWraps)  && finalMove == false) {
-
-            if(Math.abs(wrap) < Math.abs(numOfWraps)){
-                mecanum(0, .5 * dir, 0);
-
-                VL = odometryL.getVoltage();
-                VL =  Math.floor((VL)*1000)/1000;
-
-                if(initVL + .2 > VL && VL > initVL - .2 && moved == true){
-                    if(numOfWraps > 0){
-                        wrap++;
-                    }
-                    else {
-                        wrap--;
-                    }
-                    moved = false;
-                }
-
-                if(moved == false && Math.abs(initVL-VL) > .5){
-                    moved = true;
-                }
-            }
-            else{
-                mecanum(0, .2 * dir, 0);
-
-                VL = odometryL.getVoltage();
-                VL =  Math.floor((VL)*1000)/1000;
-
-                if(VL + .05 > vFinal || vFinal > VL - .05){
-                    baseBrake();
-                    brake();
-                    sleep(2000);
-                    finalMove = true;
-                }
-            }
-
-
-            packet.put("Distance", wrap * 3.938);
-            packet.put("Voltage", VL);
-            packet.put("fV", vFinal);
-            dashboard.sendTelemetryPacket(packet);
-            opMode.idle();
-        }
-    }
-    */
-
     public static boolean isBetween(double LB, double val, double UB){
         if(LB < val && val < UB){
             return true;
@@ -517,8 +440,7 @@ public class robotBase {
             if(ableToRegisterRev == false && !isBetween(starting_voltage - .2, current_voltageL, starting_voltage + .2)){
                 ableToRegisterRev = true;
             }
-
-
+            
             packet.put("Rotations", rotations);
             packet.put("Voltage", current_voltageL);
             packet.put("Can add rotations", ableToRegisterRev);
@@ -544,6 +466,5 @@ public class robotBase {
         baseBrake();
         brake();
         sleep(250);
-
     }
 }

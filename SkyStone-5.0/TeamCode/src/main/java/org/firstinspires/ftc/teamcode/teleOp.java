@@ -55,6 +55,7 @@ public class teleOp extends OpMode {
     @Override
     public void loop() {
 
+        //If right trigger is pressed, give more power to drive motors proportional to amount pressed
         if(gamepad1.right_trigger > .05) {
             boost = 1 + (gamepad1.right_trigger * .75);
         }
@@ -76,6 +77,10 @@ public class teleOp extends OpMode {
 
     @Override
     public void stop() {
+        //On stop, bring the robot to a full stop
+        robot.baseBrake();
+        robot.brake();
+
         telemetry.addData("Stopped after", runtime.seconds());
         telemetry.update();
     }
