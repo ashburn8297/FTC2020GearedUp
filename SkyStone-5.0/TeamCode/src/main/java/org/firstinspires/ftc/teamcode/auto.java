@@ -46,7 +46,7 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        robot.odometry(auto.this, telemetry, distance, 10.0);
+        robot.odometry(auto.this, telemetry, distance, 30.0);
 
         //    robot.turn(90, c, 5.0, true, auto.this, telemetry);
         //    robot.turn(270, c, 5.0, true, auto.this, telemetry);

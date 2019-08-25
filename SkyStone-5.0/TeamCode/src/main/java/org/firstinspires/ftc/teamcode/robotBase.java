@@ -411,7 +411,16 @@ public class robotBase {
         double starting_voltage = Math.floor(odometryL.getVoltage()*1000)/1000;
 
         //2.5.2., rounded to 3 decimal places
-        double ending_voltage = Math.floor(((starting_voltage + (partial_rotations * (volts_per_degree))) % 3.3) * 1000)/1000;
+
+        if(partial_rotations < 0){
+            rotations++;
+        }
+
+        double ending_voltage =  Math.floor(((starting_voltage - (Math.abs(partial_rotations) * (volts_per_degree))) % 3.3) * 1000)/1000;
+
+        if(ending_voltage < 0){
+            ending_voltage = ending_voltage + 3.3;
+        }
 
         //3.1.2, 3.2.2.
         double current_voltageL = 0.0;
@@ -431,7 +440,7 @@ public class robotBase {
 
             current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
 
-            if(isBetween(starting_voltage - .2, current_voltageL, starting_voltage + .2) && ableToRegisterRev == true){
+            if(isBetween(starting_voltage - .1, current_voltageL, starting_voltage + .1) && ableToRegisterRev == true){
                 rotations++;
                 ableToRegisterRev = false;
             }
@@ -444,6 +453,8 @@ public class robotBase {
             packet.put("Rotations", rotations);
             packet.put("Voltage", current_voltageL);
             packet.put("Can add rotations", ableToRegisterRev);
+            packet.put("Full Rotations", full_rotations);
+            packet.put("Degrees" , partial_rotations);
             dashboard.sendTelemetryPacket(packet);
             opMode.idle();
         }
