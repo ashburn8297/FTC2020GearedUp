@@ -416,6 +416,7 @@ public class robotBase {
             rotations++;
         }
 
+        //Generate ending voltage by taking the starting voltage and subtracting the partial voltage delta and taking the remainder over 3.3
         double ending_voltage =  Math.floor(((starting_voltage - (Math.abs(partial_rotations) * (volts_per_degree))) % 3.3) * 1000)/1000;
 
         if(ending_voltage < 0){
@@ -440,7 +441,7 @@ public class robotBase {
 
             current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
 
-            if(isBetween(starting_voltage - .1, current_voltageL, starting_voltage + .1) && ableToRegisterRev == true){
+            if(isBetween(starting_voltage - .15, current_voltageL, starting_voltage + .15) && ableToRegisterRev == true){
                 rotations++;
                 ableToRegisterRev = false;
             }
@@ -449,12 +450,11 @@ public class robotBase {
             if(ableToRegisterRev == false && !isBetween(starting_voltage - .2, current_voltageL, starting_voltage + .2)){
                 ableToRegisterRev = true;
             }
-            
-            packet.put("Rotations", rotations);
+
             packet.put("Voltage", current_voltageL);
             packet.put("Can add rotations", ableToRegisterRev);
+            packet.put("Rotations", rotations);
             packet.put("Full Rotations", full_rotations);
-            packet.put("Degrees" , partial_rotations);
             dashboard.sendTelemetryPacket(packet);
             opMode.idle();
         }
@@ -468,6 +468,7 @@ public class robotBase {
             if(isBetween(ending_voltage - .05 , current_voltageL , ending_voltage + .05)){
                 done = true;
             }
+            packet.put("Degrees" , partial_rotations);
             packet.put("Voltage", current_voltageL);
             packet.put("Ending Voltage", ending_voltage);
             dashboard.sendTelemetryPacket(packet);
