@@ -239,17 +239,22 @@ public class robotBase {
         //Create a local timer
         resetEncoders();
         runUsingEncoders();
-
-        int xTarget = (int) (xInches * 1000);
-        int xTolerance = 20;
-
-        int yTarget = (int) (yInches * 1000); //Where 1000 is ticks per inch of dead wheel in each axis
-        int yTolerance = 20;
+        baseBrake();
 
         period.reset(); //Start the clock
 
-        //Calculate motor magnitudes , and vary between 0 & +/- 1.
-        //Then apply these values over some distance based on odometry reading.
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        TelemetryPacket packet = new TelemetryPacket();
+
+        double volts_per_degree = 3.3/360;
+        double high_speed_motor = .5;
+        double low_speed_motor = .2;
+
+        //Set up voltages for Left encoder and Transverse Encoder
+
+        //Set up rotation count for both
+
+        //Set direction for each encoder
 
         double theta = Math.atan2(yInches, xInches) - Math.PI / 4;
 
@@ -257,15 +262,10 @@ public class robotBase {
         double v1 = Math.cos(theta);
         //Front Right and Rear Left
         double v2 = Math.sin(theta);
-
-        //How much to scale power to each pair of wheels
-        double mag = 0;
    
-      /*while(encoders are out of tolerance){
-          calculate mag value based on (distance to target)
-          apply to wheels
-          report progress and values via t
-      }*/
+        //Do full rotations
+
+        //Once both are done with full rotations, creep to distance
 
 
         //If requested, bring the drivebase to a full stop
