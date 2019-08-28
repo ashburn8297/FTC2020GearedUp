@@ -48,8 +48,6 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        robot.odometry(auto.this, telemetry, distanceY, 30.0);
-
         stop();
 
     }

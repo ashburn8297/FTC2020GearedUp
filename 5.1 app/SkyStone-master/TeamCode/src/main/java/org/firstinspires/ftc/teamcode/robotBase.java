@@ -166,7 +166,7 @@ public class robotBase {
      * @param Forward is the only double Y value which represents how the base should drive forward
      * @param Turn    is the second double X value which represents how the base should turn
      */
-    public void mecanum(double Strafe, double Forward, double Turn) {
+    public void mecanum(double Strafe, double Forward, double Turn, boolean useCurve) {
         //Find the magnitude of the controller's input
         double r = Math.hypot(Strafe, Forward);
 
@@ -183,10 +183,18 @@ public class robotBase {
         final double v4 = r * Math.cos(robotAngle) - rightX;
 
         //Ramp these values with powerScale's values.
-        FLD.setPower(powerScale(v1));
-        FRD.setPower(powerScale(v2));
-        RLD.setPower(powerScale(v3));
-        RRD.setPower(powerScale(v4));
+        if(useCurve == true){
+            FLD.setPower(powerScale(v1));
+            FRD.setPower(powerScale(v2));
+            RLD.setPower(powerScale(v3));
+            RRD.setPower(powerScale(v4));
+        }
+        else{
+            FLD.setPower(v1);
+            FRD.setPower(v2);
+            RLD.setPower(v3);
+            RRD.setPower(v4);
+        }
     }
 
     /**
@@ -229,13 +237,11 @@ public class robotBase {
      * @param xInches     desired X axis translation (left right)
      * @param yInches     desired Z axis translation (front back)
      * @param timeout     maximum amount of time for the action to occur
-     * @param speedBegin  how quickly to translate
-     * @param endingSpeed what speed should the robot be moving at the end of the movement
      * @param opMode      the current state of the opMode
      * @param t           the current opMode's telemetry object, not opMode param
      * @TODO Design this sysetem using gyro and dead wheels
      */
-    public void translate(double xInches, double yInches, double timeout, double speedBegin, double endingSpeed, LinearOpMode opMode, Telemetry t) {
+   public void translate(double xInches, double yInches, double timeout, LinearOpMode opMode, Telemetry t) {
         //Create a local timer
         resetEncoders();
         runUsingEncoders();
@@ -246,33 +252,27 @@ public class robotBase {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         TelemetryPacket packet = new TelemetryPacket();
 
+        double scale = .5;
+
         double volts_per_degree = 3.3/360;
         double high_speed_motor = .5;
         double low_speed_motor = .2;
 
-        //Set up voltages for Left encoder and Transverse Encoder
-
-        //Set up rotation count for both
-
-        //Set direction for each encoder
+        //Add control loop
 
         double theta = Math.atan2(yInches, xInches) - Math.PI / 4;
 
         //Front Left and Right Rear
-        double v1 = Math.cos(theta);
+        double v1 = Math.cos(theta)* scale;
         //Front Right and Rear Left
-        double v2 = Math.sin(theta);
+        double v2 = -Math.sin(theta) * scale;
+
+
+        mecanum(v1, v2, 0, false);
    
         //Do full rotations
 
         //Once both are done with full rotations, creep to distance
-
-
-        //If requested, bring the drivebase to a full stop
-        if (endingSpeed < .01) {
-            brake();
-            resetEncoders();
-        }
     }
 
     /**
@@ -284,7 +284,6 @@ public class robotBase {
      * @param fullStop    should the robot stop after executing the movement?
      * @param opMode      the current state of the opMode
      * @param t           the current opMode's telemetry object, not opMode param
-     * @TODO Mesh with NavX
      */
     public void turn(double targetAngle, double coeff, double timeout, boolean fullStop, LinearOpMode opMode, Telemetry t) {
         //Create a local timer
@@ -339,7 +338,7 @@ public class robotBase {
             //Modify speed with variable 'speed'
             steer = error * coeff * neg;
 
-            mecanum(0.0, 0.0, steer);
+            mecanum(0.0, 0.0, steer, false);
 
             //Terminating condition
             if (Math.abs(cycleHeading - deltaHeading) < HEADING_THRESHOLD) {
@@ -392,8 +391,8 @@ public class robotBase {
         TelemetryPacket packet = new TelemetryPacket();
 
         double volts_per_degree = 3.3/360;
-        double high_speed_motor = .5;
-        double low_speed_motor = .2;
+        double high_speed_motor = .55;
+        double low_speed_motor = .3;
 
         boolean ableToRegisterRev = false;
 
@@ -437,7 +436,7 @@ public class robotBase {
 
         //3.1.
         while (opMode.opModeIsActive() && Math.abs(rotations) < Math.abs(full_rotations)  && period.seconds() < runtime) {
-            mecanum(0, high_speed_motor * dir, 0);
+            mecanum(0, high_speed_motor * dir, 0, false);
 
             current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
 
@@ -461,7 +460,7 @@ public class robotBase {
 
         //3.2.
         while (opMode.opModeIsActive() && !done  && period.seconds() < runtime) {
-            mecanum(0, low_speed_motor * dir, 0);
+            mecanum(0, low_speed_motor * dir, 0, false);
 
             current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
 

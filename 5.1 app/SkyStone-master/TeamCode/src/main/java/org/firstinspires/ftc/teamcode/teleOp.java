@@ -63,7 +63,7 @@ public class teleOp extends OpMode {
             boost = 1.0;
         }
 
-        robot.mecanum(gamepad1.left_stick_x * boost, -gamepad1.left_stick_y * boost, gamepad1.right_stick_x);
+        robot.mecanum(gamepad1.left_stick_x * boost, -gamepad1.left_stick_y * boost, gamepad1.right_stick_x, true);
 
         //------------------------------------------------------------------------------------------
         telemetry.addLine("Front Motor Powers")
