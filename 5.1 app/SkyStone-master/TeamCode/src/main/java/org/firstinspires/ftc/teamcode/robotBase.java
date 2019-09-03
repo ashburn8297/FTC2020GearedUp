@@ -3,17 +3,13 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
-import com.qualcomm.robotcore.hardware.AnalogInputController;
-import com.qualcomm.robotcore.hardware.AnalogSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IntegratingGyroscope;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -27,27 +23,21 @@ import static android.os.SystemClock.sleep;
 
 public class robotBase {
 
+    public static final double HEADING_THRESHOLD = .25;
+    public static final String VUFORIA_KEY = "AbEDH9P/////AAABmcFPgUDLz0tMh55QD8t9w6Bqxt3h/G+JEMdItgpjoR+S1FFRIeF/w2z5K7r/nUzRZKleksLHPglkfMKX0NltxxpVUpXqj+w6sGvedaNq449JZbEQxaYe4SU+3NNi0LBN879h9LZW9RxJFOMt7HfgssnBdg+3IsiwVKKYnovU+99oz3gJkcOtYhUS9ku3s0Wz2n6pOu3znT3bICiR0/480N63FS7d6Mk6sqN7mNyxVcRf8D5mqIMKVNGAjni9nSYensl8GAJWS1vYfZ5aQhXKs9BPM6mST5qf58Tg4xWoHltcyPp0x33tgQHBbcel0M9pYe/7ub1pmzvxeBqVgcztmzC7uHnosDO3/2MAMah8qijd";
     /*Public hardware members*/
     public DcMotor FLD = null; //Front Left Drive Motor, "FLD"
     public DcMotor FRD = null; //Front Right Drive Motor, "FRD"
     public DcMotor RLD = null; //Rear Left Drive Motor, "RLD"
     public DcMotor RRD = null; //Rear Right Drive Motor, "RRD"
-
-    IntegratingGyroscope gyroNV;                //For polymorphism
-    NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope, "navx" on phones
-
-    AnalogInput odometryL; //"odometryL"
-    AnalogInput odometryR; //"odometryR"
-
-    public static final double inches_per_rotation = 3.769;
-
-    public static final double HEADING_THRESHOLD = .25;
     public double prev_heading = 0;
-
-    public static final String VUFORIA_KEY = "AbEDH9P/////AAABmcFPgUDLz0tMh55QD8t9w6Bqxt3h/G+JEMdItgpjoR+S1FFRIeF/w2z5K7r/nUzRZKleksLHPglkfMKX0NltxxpVUpXqj+w6sGvedaNq449JZbEQxaYe4SU+3NNi0LBN879h9LZW9RxJFOMt7HfgssnBdg+3IsiwVKKYnovU+99oz3gJkcOtYhUS9ku3s0Wz2n6pOu3znT3bICiR0/480N63FS7d6Mk6sqN7mNyxVcRf8D5mqIMKVNGAjni9nSYensl8GAJWS1vYfZ5aQhXKs9BPM6mST5qf58Tg4xWoHltcyPp0x33tgQHBbcel0M9pYe/7ub1pmzvxeBqVgcztmzC7uHnosDO3/2MAMah8qijd";
     public VuforiaLocalizer vuforia;
     public TFObjectDetector tfod;
-
+    IntegratingGyroscope gyroNV;                //For polymorphism
+    NavxMicroNavigationSensor navxMicro;        //To initialize gyroscope, "navx" on phones
+    AnalogInput odometryL; //"odometryL"
+    AnalogInput odometryR; //"odometryR"
+    AnalogInput odometryT; //"odometryT"
     /*Local opMode members*/
     HardwareMap hwMap = null;
     private ElapsedTime period = new ElapsedTime();
@@ -55,6 +45,44 @@ public class robotBase {
     //Empty constructor for object creation.
     public robotBase() {
 
+    }
+
+    /**
+     * Scale input to a modified sigmoid curve
+     *
+     * @param power is a double input from the mecanum method
+     * @return modified power value per the sigmoid curve
+     * graph here -> https://www.desmos.com/calculator/7ehynwbhn6
+     */
+    public static double powerScale(double power) {
+        //If power is negative, log this and save for later
+        //If positive, keep neg to 1, so that num is always positive
+        //If negative, change to -1, so that ending number is negative
+        double neg = 1;
+        if (power < 0)
+            neg = -1;
+
+        //Set power to always be positive
+        power = Math.abs(power);
+
+        //modify to sigmoid
+        //delivers 0 power at 0, and 1 power at 1, varies in between
+        power = (.8 / (1 + Math.pow(Math.E, -12 * (power - .5))));
+        //graph here -> https://www.desmos.com/calculator/tpdxkzhned
+
+
+        //Make sure value falls between -1 and 1
+
+        //Explaining the math;
+        //Take the maximum of -1 and the power * neg value (makes sure it's greater than -1
+        //Then take the minimum of 1 and the power * neg value (makes sure it's less than 1)
+        //Multiply the result by 100
+        //Then divide by 100 and get the floating point answer (rounds to 2 decimal places)
+        return Math.round(Math.min(Math.max(power * neg, -1), 1) * 100) / 100.0;
+    }
+
+    public static boolean isBetween(double LB, double val, double UB) {
+        return LB < val && val < UB;
     }
 
     /* Initialize standard Hardware interfaces */
@@ -92,7 +120,7 @@ public class robotBase {
         odometryR = hwMap.get(AnalogInput.class, "odometryR");
 
 
-        if(gyroOn) {
+        if (gyroOn) {
 
 
             //Configure the NavXMicro for use
@@ -102,7 +130,6 @@ public class robotBase {
             t.update();
         }
     }
-
 
     //Run the robot, ignoring encoder values
     public void runWithoutEncoders() {
@@ -183,13 +210,12 @@ public class robotBase {
         final double v4 = r * Math.cos(robotAngle) - rightX;
 
         //Ramp these values with powerScale's values.
-        if(useCurve == true){
+        if (useCurve == true) {
             FLD.setPower(powerScale(v1));
             FRD.setPower(powerScale(v2));
             RLD.setPower(powerScale(v3));
             RRD.setPower(powerScale(v4));
-        }
-        else{
+        } else {
             FLD.setPower(v1);
             FRD.setPower(v2);
             RLD.setPower(v3);
@@ -198,50 +224,16 @@ public class robotBase {
     }
 
     /**
-     * Scale input to a modified sigmoid curve
-     *
-     * @param power is a double input from the mecanum method
-     * @return modified power value per the sigmoid curve
-     * graph here -> https://www.desmos.com/calculator/7ehynwbhn6
-     */
-    public static double powerScale(double power) {
-        //If power is negative, log this and save for later
-        //If positive, keep neg to 1, so that num is always positive
-        //If negative, change to -1, so that ending number is negative
-        double neg = 1;
-        if (power < 0)
-            neg = -1;
-
-        //Set power to always be positive
-        power = Math.abs(power);
-
-        //modify to sigmoid
-        //delivers 0 power at 0, and 1 power at 1, varies in between
-        power = (.8 / (1 + Math.pow(Math.E, -12 * (power - .5))));
-        //graph here -> https://www.desmos.com/calculator/tpdxkzhned
-
-
-        //Make sure value falls between -1 and 1
-
-        //Explaining the math;
-        //Take the maximum of -1 and the power * neg value (makes sure it's greater than -1
-        //Then take the minimum of 1 and the power * neg value (makes sure it's less than 1)
-        //Multiply the result by 100
-        //Then divide by 100 and get the floating point answer (rounds to 2 decimal places)
-        return Math.round(Math.min(Math.max(power * neg, -1), 1) * 100) / 100.0;
-    }
-
-    /**
      * A method to drive to a specific position via a desired (X,Y) pair given in inches.
      *
-     * @param xInches     desired X axis translation (left right)
-     * @param yInches     desired Z axis translation (front back)
-     * @param timeout     maximum amount of time for the action to occur
-     * @param opMode      the current state of the opMode
-     * @param t           the current opMode's telemetry object, not opMode param
-     * @TODO Design this sysetem using gyro and dead wheels
+     * @param xInches desired X axis translation (left right)
+     * @param yInches desired Z axis translation (front back)
+     * @param timeout maximum amount of time for the action to occur
+     * @param opMode  the current state of the opMode
+     * @param t       the current opMode's telemetry object, not opMode param
+     * @TODO Design this system using gyro and dead wheels
      */
-   public void translate(double xInches, double yInches, double timeout, LinearOpMode opMode, Telemetry t) {
+    public void translate(double xInches, double yInches, double timeout, LinearOpMode opMode, Telemetry t) {
         //Create a local timer
         resetEncoders();
         runUsingEncoders();
@@ -252,27 +244,152 @@ public class robotBase {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         TelemetryPacket packet = new TelemetryPacket();
 
+        //Master speed modifier
         double scale = .5;
 
-        double volts_per_degree = 3.3/360;
-        double high_speed_motor = .5;
-        double low_speed_motor = .2;
+        //Master distance constants
+        final double inches_per_rotation = 3.769;
+        final double volts_per_degree = 3.3 / 360;
+        final double high_speed_motor = .5;
+        final double low_speed_motor = .2;
 
-        //Add control loop
+        boolean ableToRegisterRevX = false;
+        boolean ableToRegisterRevY = false;
 
+
+        //Generate rotational deltas
+        double degreesX = (xInches / inches_per_rotation) * 360;
+        int full_rotationsX = (int) (degreesX / 360); //in full revolutions
+        int rotationsX = 0;
+        int partial_rotationsX = (int) (degreesX % 360); //in degrees
+        boolean doneX = false;
+
+        //---------------------
+        double degreesY = (yInches / inches_per_rotation) * 360;
+        int full_rotationsY = (int) (degreesY / 360); //in full revolutions
+        int rotationsY = 0;
+        int partial_rotationsY = (int) (degreesY % 360); //in degrees
+        boolean doneY = false;
+
+
+        //Voltage Math
+        double starting_voltageX = Math.floor(odometryT.getVoltage() * 1000) / 1000;
+        if (partial_rotationsX < 0) {
+            rotationsX++;
+        }
+        double current_voltageT = 0.0;
+        double ending_voltageX = Math.floor(((starting_voltageX - (Math.abs(partial_rotationsX) * (volts_per_degree))) % 3.3) * 1000) / 1000;
+        if (ending_voltageX < 0) {
+            ending_voltageX = ending_voltageX + 3.3;
+        }
+
+        //-------------------
+        double starting_voltageY = Math.floor(odometryL.getVoltage() * 1000) / 1000;
+        if (partial_rotationsY < 0) {
+            rotationsY++;
+        }
+        double current_voltageL = 0.0;
+        double ending_voltageY = Math.floor(((starting_voltageY - (Math.abs(partial_rotationsY) * (volts_per_degree))) % 3.3) * 1000) / 1000;
+        if (ending_voltageY < 0) {
+            ending_voltageY = ending_voltageY + 3.3;
+        }
+
+
+        //Calculate direction
+        double dirX = 0;
+        if (xInches > 0) {
+            dirX = 1;
+        } else {
+            dirX = -1;
+        }
+
+        //------------------------------
+        double dirY = 0;
+        if (yInches > 0) {
+            dirY = 1;
+        } else {
+            dirY = -1;
+        }
+
+
+        //Vector calculation
         double theta = Math.atan2(yInches, xInches) - Math.PI / 4;
 
         //Front Left and Right Rear
-        double v1 = Math.cos(theta)* scale;
+        double v1 = Math.cos(theta) * scale;
         //Front Right and Rear Left
         double v2 = -Math.sin(theta) * scale;
 
+        double velX = 0.0;
+        double velY = 0.0;
 
-        mecanum(v1, v2, 0, false);
-   
-        //Do full rotations
+        while (opMode.opModeIsActive() && Math.abs(rotationsX) < Math.abs(full_rotationsX)
+                && Math.abs(rotationsY) < Math.abs(full_rotationsY) && period.seconds() < timeout) {
 
-        //Once both are done with full rotations, creep to distance
+            current_voltageL = Math.floor(odometryL.getVoltage() * 1000) / 1000;
+            current_voltageT = Math.floor(odometryL.getVoltage() * 1000) / 1000;
+
+            if (Math.abs(rotationsX) < Math.abs(full_rotationsX))
+                velX = v1;
+            else
+                velX = 0;
+
+            if (Math.abs(rotationsX) < Math.abs(full_rotationsX))
+                velY = v1;
+            else
+                velY = 0;
+
+            //-------------------------------------
+            if (isBetween(starting_voltageX - .15, current_voltageT, starting_voltageX + .15) && ableToRegisterRevX == true) {
+                rotationsX++;
+                ableToRegisterRevX = false;
+            }
+
+            //has robot moved enough to register revolution
+            if (ableToRegisterRevX == false && !isBetween(starting_voltageX - .2, current_voltageT, starting_voltageX + .2)) {
+                ableToRegisterRevX = true;
+            }
+
+            //---------------------------------------
+            if (isBetween(starting_voltageY - .15, current_voltageL, starting_voltageY + .15) && ableToRegisterRevY == true) {
+                rotationsY++;
+                ableToRegisterRevY = false;
+            }
+
+            //has robot moved enough to register revolution
+            if (ableToRegisterRevY == false && !isBetween(starting_voltageY - .2, current_voltageL, starting_voltageY + .2)) {
+                ableToRegisterRevY = true;
+            }
+
+            mecanum(velX * dirX, velY * dirY, 0, false);
+            opMode.idle();
+        }
+
+        //-----------------------------------------------------
+        while (opMode.opModeIsActive() && !doneX
+                && !doneY && period.seconds() < timeout) {
+
+            mecanum(velX * dirX * .5, velY * dirY * .5, 0, false);
+
+            current_voltageL = Math.floor(odometryL.getVoltage() * 1000) / 1000;
+            current_voltageT = Math.floor(odometryL.getVoltage() * 1000) / 1000;
+
+            if (isBetween(ending_voltageX - .05, current_voltageT, ending_voltageX + .05)) {
+                doneX = true;
+                velX = 0.0;
+            }
+            if (isBetween(ending_voltageY - .05, current_voltageL, ending_voltageY + .05)) {
+                doneY = true;
+                velY = 0.0;
+            }
+
+            opMode.idle();
+        }
+
+        baseBrake();
+
+        brake();
+        sleep(250);
     }
 
     /**
@@ -374,25 +491,17 @@ public class robotBase {
         return Math.round(result * 100) / 100;
     }
 
-    public static boolean isBetween(double LB, double val, double UB){
-        if(LB < val && val < UB){
-            return true;
-        }
-        else{
-            return false;
-        }
-    }
-
-    public void odometry(LinearOpMode opMode, Telemetry t, double distance, double runtime){
+    public void odometry(LinearOpMode opMode, Telemetry t, double distance, double runtime) {
 
         period.reset();
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
         TelemetryPacket packet = new TelemetryPacket();
 
-        double volts_per_degree = 3.3/360;
+        double volts_per_degree = 3.3 / 360;
         double high_speed_motor = .55;
         double low_speed_motor = .3;
+        final double inches_per_rotation = 3.769;
 
         boolean ableToRegisterRev = false;
 
@@ -407,18 +516,18 @@ public class robotBase {
         boolean done = false;
 
         //2.4.2., rounded to 3 decimal places
-        double starting_voltage = Math.floor(odometryL.getVoltage()*1000)/1000;
+        double starting_voltage = Math.floor(odometryL.getVoltage() * 1000) / 1000;
 
         //2.5.2., rounded to 3 decimal places
 
-        if(partial_rotations < 0){
+        if (partial_rotations < 0) {
             rotations++;
         }
 
         //Generate ending voltage by taking the starting voltage and subtracting the partial voltage delta and taking the remainder over 3.3
-        double ending_voltage =  Math.floor(((starting_voltage - (Math.abs(partial_rotations) * (volts_per_degree))) % 3.3) * 1000)/1000;
+        double ending_voltage = Math.floor(((starting_voltage - (Math.abs(partial_rotations) * (volts_per_degree))) % 3.3) * 1000) / 1000;
 
-        if(ending_voltage < 0){
+        if (ending_voltage < 0) {
             ending_voltage = ending_voltage + 3.3;
         }
 
@@ -427,26 +536,25 @@ public class robotBase {
 
         //2.6.
         double dir = 0;
-        if(distance > 0){
+        if (distance > 0) {
             dir = 1;
-        }
-        else{
+        } else {
             dir = -1;
         }
 
         //3.1.
-        while (opMode.opModeIsActive() && Math.abs(rotations) < Math.abs(full_rotations)  && period.seconds() < runtime) {
+        while (opMode.opModeIsActive() && Math.abs(rotations) < Math.abs(full_rotations) && period.seconds() < runtime) {
             mecanum(0, high_speed_motor * dir, 0, false);
 
-            current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
+            current_voltageL = Math.floor(odometryL.getVoltage() * 1000) / 1000;
 
-            if(isBetween(starting_voltage - .15, current_voltageL, starting_voltage + .15) && ableToRegisterRev == true){
+            if (isBetween(starting_voltage - .15, current_voltageL, starting_voltage + .15) && ableToRegisterRev == true) {
                 rotations++;
                 ableToRegisterRev = false;
             }
 
             //has robot moved enough to register revolution
-            if(ableToRegisterRev == false && !isBetween(starting_voltage - .2, current_voltageL, starting_voltage + .2)){
+            if (ableToRegisterRev == false && !isBetween(starting_voltage - .2, current_voltageL, starting_voltage + .2)) {
                 ableToRegisterRev = true;
             }
 
@@ -459,15 +567,15 @@ public class robotBase {
         }
 
         //3.2.
-        while (opMode.opModeIsActive() && !done  && period.seconds() < runtime) {
+        while (opMode.opModeIsActive() && !done && period.seconds() < runtime) {
             mecanum(0, low_speed_motor * dir, 0, false);
 
-            current_voltageL =  Math.floor(odometryL.getVoltage()*1000)/1000;
+            current_voltageL = Math.floor(odometryL.getVoltage() * 1000) / 1000;
 
-            if(isBetween(ending_voltage - .05 , current_voltageL , ending_voltage + .05)){
+            if (isBetween(ending_voltage - .05, current_voltageL, ending_voltage + .05)) {
                 done = true;
             }
-            packet.put("Degrees" , partial_rotations);
+            packet.put("Degrees", partial_rotations);
             packet.put("Voltage", current_voltageL);
             packet.put("Ending Voltage", ending_voltage);
             dashboard.sendTelemetryPacket(packet);
@@ -475,6 +583,7 @@ public class robotBase {
         }
 
         baseBrake();
+
         brake();
         sleep(250);
     }

@@ -6,10 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-
 import static android.os.SystemClock.sleep;
 
 
@@ -30,8 +26,6 @@ public class teleOp extends OpMode {
          */
         robot.init(hardwareMap, telemetry, false);
         sleep(100);
-
-
 
         //Start the robot at zero power, using encoders, and float zero power
         robot.brake();
@@ -56,10 +50,9 @@ public class teleOp extends OpMode {
     public void loop() {
 
         //If right trigger is pressed, give more power to drive motors proportional to amount pressed
-        if(gamepad1.right_trigger > .05) {
+        if (gamepad1.right_trigger > .05) {
             boost = 1 + (gamepad1.right_trigger * .75);
-        }
-        else{
+        } else {
             boost = 1.0;
         }
 
