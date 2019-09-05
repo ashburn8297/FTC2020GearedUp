@@ -9,3 +9,5 @@ email: tmgearedup@gmail.com
 password: cpt.gear06
 
 TODO: Dashboard, Orbit, Pivot Turn, 2D odometry
+
+Solutions? Revert to 5.0 (see if dashboard works) and try G4 to see if odometry responds differently
