@@ -248,7 +248,7 @@ public class robotBase {
         double scale = .5;
 
         //Master distance constants
-        final double inches_per_rotation = 3.769;
+        final double inches_per_rotation = 6.28;
         final double volts_per_degree = 3.3 / 360;
         final double high_speed_motor = .5;
         final double low_speed_motor = .2;
@@ -362,6 +362,10 @@ public class robotBase {
             }
 
             mecanum(velX * dirX, velY * dirY, 0, false);
+
+            packet.put("X Voltage", current_voltageT);
+            packet.put("Y voltage", current_voltageL);
+            dashboard.sendTelemetryPacket(packet);
             opMode.idle();
         }
 
@@ -443,8 +447,6 @@ public class robotBase {
             }
 
             //algorithm here  @ https://www.desmos.com/calculator/thgycpx0n9
-
-            //Will need revision with navX gyro
             double pct = 1 + ((c - d) / d);
 
             if (pct < 1) {
@@ -499,9 +501,9 @@ public class robotBase {
         TelemetryPacket packet = new TelemetryPacket();
 
         double volts_per_degree = 3.3 / 360;
-        double high_speed_motor = .55;
+        double high_speed_motor = .45;
         double low_speed_motor = .3;
-        final double inches_per_rotation = 3.769;
+        final double inches_per_rotation = 6.28;
 
         boolean ableToRegisterRev = false;
 

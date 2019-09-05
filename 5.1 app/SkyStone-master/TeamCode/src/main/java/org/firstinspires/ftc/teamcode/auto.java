@@ -43,7 +43,10 @@ public class auto extends LinearOpMode {
         //------------------------------------------------------------------------------------------
         runtime.reset();
 
-        stop();
+        robot.odometry(auto.this, telemetry, 20.0, 5.0);
+        sleep(5000);
+        //robot.translate(0.0, 20.0, 10.0 ,auto.this, telemetry);
 
+        stop();
     }
 }

@@ -1,0 +1,11 @@
+Phone Name | Device Type and Identifier
+8297-A     | Samsung S5
+8297-B     | Moto G5
+8297-C     | Moto G4 (1)
+8297-D     | Moto G4 (2)
+8297-E     | Moto G4 (3)
+
+email: tmgearedup@gmail.com
+password: cpt.gear06
+
+TODO: Dashboard, Orbit, Pivot Turn, 2D odometry
