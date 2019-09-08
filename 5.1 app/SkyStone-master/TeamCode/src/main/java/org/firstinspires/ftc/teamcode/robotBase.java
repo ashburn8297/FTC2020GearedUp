@@ -446,7 +446,7 @@ public class robotBase {
                 neg = -1;
             }
 
-            //algorithm here  @ https://www.desmos.com/calculator/fxejcvqqdv
+            //algorithm here  @ https://www.desmos.com/calculator/thgycpx0n9
             double pct = 1 + ((c - d) / d);
 
             if (pct < 1) {
